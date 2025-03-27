@@ -3,6 +3,72 @@ import React, { useState } from "react";
 import BookCard from "../components/BookCard";
 import { Link } from "react-router";
 
+const mockBooks = [
+  {
+    id: "1",
+    title: "Vision of the Anointed",
+    author: "Thomas Sowell",
+    coverImage:
+      "https://upload.wikimedia.org/wikipedia/en/d/d1/The_vision_of_the_annointed_bookcover.jpg",
+    format: "Paperback",
+    condition: "8.5/10",
+    distance: "3km",
+    owner: "Justin James",
+    rating: 5,
+    categories: ["Economics", "Non-fiction", "Politics"],
+    availablePeriod: "1 year (12/04/2025 - 12/04/2026)",
+    price: 5000,
+    currency: "Rp",
+  },
+  {
+    id: "2",
+    title: "Vision of the Anointed",
+    author: "Thomas Sowell",
+    coverImage:
+      "https://upload.wikimedia.org/wikipedia/en/d/d1/The_vision_of_the_annointed_bookcover.jpg",
+    format: "Hardcover",
+    condition: "8.0/10",
+    distance: "7.5km",
+    owner: "Josh R.",
+    rating: 5,
+    categories: ["Economics", "Non-fiction", "Politics"],
+    availablePeriod: "2 months (12/04/2025 - 12/06/2025)",
+    price: 7000,
+    currency: "Rp",
+  },
+  {
+    id: "3",
+    title: "1984",
+    author: "George Orwell",
+    coverImage: "https://cdn.gramedia.com/uploads/items/9780451524935.jpg",
+    format: "Paperback",
+    condition: "7.5/10",
+    distance: "5km",
+    owner: "Sarah M.",
+    rating: 4.5,
+    categories: ["Fiction", "Dystopian", "Classics"],
+    availablePeriod: "3 months (12/04/2025 - 12/07/2025)",
+    price: 4500,
+    currency: "Rp",
+  },
+  {
+    id: "4",
+    title: "Pride and Prejudice",
+    author: "Jane Austen",
+    coverImage:
+      "https://upload.wikimedia.org/wikipedia/id/8/8f/Pride_%26_Prejudice_Movie_Poster_2005.jpg",
+    format: "Hardcover",
+    condition: "9.0/10",
+    distance: "2.3km",
+    owner: "Emma W.",
+    rating: 4.8,
+    categories: ["Fiction", "Romance", "Classics"],
+    availablePeriod: "6 months (12/04/2025 - 12/10/2025)",
+    price: 6000,
+    currency: "Rp",
+  },
+];
+
 const HomePage = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -25,9 +91,9 @@ const HomePage = () => {
       </div>
 
       <div className="p-4">
-        <BookCard />
-        <BookCard />
-        <BookCard />
+        {mockBooks.map((book) => (
+          <BookCard key={book.id} book={book} />
+        ))}
       </div>
     </div>
   );

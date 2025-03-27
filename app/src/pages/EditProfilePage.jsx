@@ -50,7 +50,7 @@ const EditProfilePage = () => {
 
   return (
     <div className="pb-20 md:pb-0">
-      <header className="bg-white p-4 border-b flex items-center">
+      <header className="md:hidden bg-white p-4 border-b flex items-center">
         <button onClick={handleCancel} className="mr-4">
           <ChevronLeft size={24} />
         </button>
@@ -113,9 +113,10 @@ const EditProfilePage = () => {
               type="email"
               id="email"
               name="email"
+              disabled
               value={formData.email}
               onChange={handleInputChange}
-              className="w-full p-2 border rounded-md"
+              className="w-full p-2 border text-gray-500 rounded-md"
               required
             />
           </div>

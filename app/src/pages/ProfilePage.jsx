@@ -20,7 +20,7 @@ const ProfilePage = () => {
   const profile = mockProfile;
 
   const handleLogout = () => {
-    console.log("Logging out");
+    navigate("/login");
   };
 
   const handleEditProfile = () => {
