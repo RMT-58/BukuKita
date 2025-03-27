@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* menghilangkan scrollbar vertical*/
+html::-webkit-scrollbar {
+  display: none;
+}
+
+html {
+  scrollbar-width: none;
+}
+
+/* html {
+  overflow-y: scroll;
+  scrollbar-width: none;
+} */
