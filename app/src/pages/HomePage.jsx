@@ -21,17 +21,6 @@ const HomePage = () => {
             size={20}
             className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
           />
-          <Link
-            to={"/chats"}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2"
-          >
-            <div className="relative">
-              <MessageSquare size={20} className="text-gray-600" />
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                1
-              </span>
-            </div>
-          </Link>
         </div>
       </div>
 

@@ -26,7 +26,7 @@ const Navbar = () => {
         <div className="flex justify-around items-center">
           <Link
             to="/"
-            className={`flex flex-col items-center ${isActiveRoute("/") ? "text-[#00A8FF]" : "text-gray-500"}`}
+            className={`flex flex-col items-center ${isActiveRoute("/") ? "text-primary" : "text-gray-500"}`}
           >
             <Home size={20} />
             <span className="text-xs mt-1">Home</span>
@@ -34,7 +34,7 @@ const Navbar = () => {
 
           <Link
             to="/library"
-            className={`flex flex-col items-center ${isActiveRoute("/library") ? "text-[#00A8FF]" : "text-gray-500"}`}
+            className={`flex flex-col items-center ${isActiveRoute("/library") ? "text-primary" : "text-gray-500"}`}
           >
             <BookOpen size={20} />
             <span className="text-xs mt-1">Library</span>
@@ -42,16 +42,24 @@ const Navbar = () => {
 
           <Link
             to="/add-book"
-            className={`flex flex-col items-center ${isActiveRoute("/add-book") ? "text-[#00A8FF]" : "text-gray-500"}`}
+            className={`flex flex-col items-center ${
+              isActiveRoute("/add-book") ? "text-primary" : "text-gray-500"
+            }`}
           >
-            <div className="bg-[#00A8FF] rounded-full w-12 h-12 flex items-center justify-center text-white">
+            <div
+              className={`relative rounded-full w-12 h-12 flex items-center justify-center text-white bg-primary ${
+                isActiveRoute("/add-book")
+                  ? "ring-2 ring-blue-500 transition-all duration-200"
+                  : ""
+              }`}
+            >
               <PlusCircle size={24} />
             </div>
           </Link>
 
           <Link
             to="/chats"
-            className={`flex flex-col items-center ${isActiveRoute("/chats") ? "text-[#00A8FF]" : "text-gray-500"}`}
+            className={`flex flex-col items-center ${isActiveRoute("/chats") ? "text-primary" : "text-gray-500"}`}
           >
             <MessageSquare size={20} />
             <span className="text-xs mt-1">Chats</span>
@@ -59,7 +67,7 @@ const Navbar = () => {
 
           <Link
             to="/profile"
-            className={`flex flex-col items-center ${isActiveRoute("/profile") ? "text-[#00A8FF]" : "text-gray-500"}`}
+            className={`flex flex-col items-center ${isActiveRoute("/profile") ? "text-primary" : "text-gray-500"}`}
           >
             <User size={20} />
             <span className="text-xs mt-1">Profile</span>
@@ -72,9 +80,9 @@ const Navbar = () => {
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <Link
             to="/"
-            className="text-xl font-bold text-[#00A8FF] flex items-center"
+            className="text-xl font-bold text-primary flex items-center"
           >
-            <div className="w-8 h-8 bg-[#00A8FF] rounded-full flex items-center justify-center mr-2">
+            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center mr-2">
               <svg
                 width="16"
                 height="16"
@@ -111,31 +119,31 @@ const Navbar = () => {
           <div className="flex items-center space-x-8">
             <Link
               to="/"
-              className={`${isActiveRoute("/") ? "text-[#00A8FF]" : "text-gray-700"} font-medium`}
+              className={`${isActiveRoute("/") ? "text-primary" : "text-gray-700"} font-medium`}
             >
               Home
             </Link>
             <Link
               to="/library"
-              className={`${isActiveRoute("/library") ? "text-[#00A8FF]" : "text-gray-700"} font-medium`}
+              className={`${isActiveRoute("/library") ? "text-primary" : "text-gray-700"} font-medium`}
             >
               Library
             </Link>
             <Link
               to="/add-book"
-              className={`${isActiveRoute("/add-book") ? "text-[#00A8FF]" : "text-gray-700"} font-medium`}
+              className={`${isActiveRoute("/add-book") ? "text-primary" : "text-gray-700"} font-medium`}
             >
               Add a Book
             </Link>
             <Link
               to="/chats"
-              className={`${isActiveRoute("/chats") ? "text-[#00A8FF]" : "text-gray-700"} font-medium`}
+              className={`${isActiveRoute("/chats") ? "text-primary" : "text-gray-700"} font-medium`}
             >
               Chats
             </Link>
             <Link
               to="/profile"
-              className={`${isActiveRoute("/profile") ? "text-[#00A8FF]" : "text-gray-700"} font-medium`}
+              className={`${isActiveRoute("/profile") ? "text-primary" : "text-gray-700"} font-medium`}
             >
               Profile
             </Link>
