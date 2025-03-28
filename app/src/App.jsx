@@ -11,6 +11,7 @@ import ChatPage from "./pages/ChatPage";
 import AudioPlayer from "./pages/AudioPlayer";
 import ProfilePage from "./pages/ProfilePage";
 import EditProfilePage from "./pages/EditProfilePage";
+import CartPage from "./pages/CartPage";
 
 const App = () => {
   return (
@@ -26,6 +27,7 @@ const App = () => {
         <Route path="/player" element={<AudioPlayer />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/edit-profile" element={<EditProfilePage />} />
+        <Route path="/cart" element={<CartPage />} />
 
         <Route path="*" element={<NotFound />} />
       </Routes>
