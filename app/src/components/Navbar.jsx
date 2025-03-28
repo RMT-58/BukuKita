@@ -9,12 +9,14 @@ import {
   Plus,
   PlusCircle,
   Search,
+  ShoppingCart,
   User,
 } from "lucide-react";
 import logo from "../assets/logo.png";
 
 const Navbar = () => {
   const location = useLocation();
+  const cartCount = 1;
 
   const isActiveRoute = (path) => {
     return location.pathname === path;
@@ -119,6 +121,14 @@ const Navbar = () => {
               className={`${isActiveRoute("/profile") ? "text-primary" : "text-gray-700"} font-medium`}
             >
               Profile
+            </Link>
+            <Link to="/cart" className="relative">
+              <ShoppingCart className="text-gray-700 text-xl" />
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                  {cartCount}
+                </span>
+              )}
             </Link>
           </div>
         </div>

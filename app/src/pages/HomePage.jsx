@@ -1,4 +1,12 @@
-import { Bell, MessageSquare, Plus, Search, Star, User } from "lucide-react";
+import {
+  Bell,
+  MessageSquare,
+  Plus,
+  Search,
+  ShoppingCart,
+  Star,
+  User,
+} from "lucide-react";
 import React, { useState } from "react";
 import BookCard from "../components/BookCard";
 import { Link } from "react-router";
@@ -72,11 +80,13 @@ const mockBooks = [
 const HomePage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const cartCount = 2;
 
   const tabs = [
     { value: "all", label: "All", count: 7 },
     { value: "books", label: "Books", count: 4 },
     { value: "audiobooks", label: "Audio books", count: 2 },
+    { value: "summaries", label: "Summaries", count: 1 },
   ];
 
   return (
@@ -84,6 +94,14 @@ const HomePage = () => {
       <header className="bg-white border-b p-4 md:hidden">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">Home</h1>
+          <Link to="/cart" className="relative">
+            <ShoppingCart size={24} className="text-gray-700" />
+            {cartCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                {cartCount}
+              </span>
+            )}
+          </Link>
         </div>
       </header>
       <div className="p-4 max-w-4xl mx-auto">
@@ -137,7 +155,7 @@ const HomePage = () => {
 
         <div className="p-4">
           {mockBooks.map((book) => (
-            <BookCard key={book.id} book={book} />
+            <BookCard key={book.id} book={book} isHome={true} />
           ))}
         </div>
       </div>

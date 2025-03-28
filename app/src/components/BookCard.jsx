@@ -2,7 +2,7 @@ import { Star } from "lucide-react";
 import React from "react";
 import { Link } from "react-router";
 
-const BookCard = ({ book }) => {
+const BookCard = ({ book, isHome }) => {
   return (
     <div className="bg-white rounded-md overflow-hidden shadow-sm">
       <div className="p-4">
@@ -124,12 +124,22 @@ const BookCard = ({ book }) => {
                 />
               </svg>
             </button>
-            <Link
-              href={`/rent/${book.id}`}
-              className="flex-1 bg-[#00A8FF] text-white rounded flex items-center justify-center py-2"
-            >
-              Rent
-            </Link>
+
+            {isHome ? (
+              <Link
+                href={`/rent/${book.id}`}
+                className="flex-1 bg-[#00A8FF] text-white rounded flex items-center justify-center py-2"
+              >
+                Rent
+              </Link>
+            ) : (
+              <Link
+                href={`/book/${book.id}`}
+                className="flex-1 bg-[#00A8FF] text-white rounded flex items-center justify-center py-2"
+              >
+                View Details
+              </Link>
+            )}
           </div>
         </div>
       </div>
