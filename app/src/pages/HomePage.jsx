@@ -71,29 +71,75 @@ const mockBooks = [
 
 const HomePage = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
+
+  const tabs = [
+    { value: "all", label: "All", count: 7 },
+    { value: "books", label: "Books", count: 4 },
+    { value: "audiobooks", label: "Audio books", count: 2 },
+  ];
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <div className="bg-white p-4 shadow-sm sticky top-0 z-10">
-        <div className="relative">
+    <div className="pb-20 md:pb-0 bg-gray-50 min-h-screen">
+      <header className="bg-white border-b p-4 md:hidden">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold">Home</h1>
+        </div>
+      </header>
+      <div className="p-4 max-w-4xl mx-auto">
+        {/* search */}
+        <div className="relative mb-6">
           <input
             type="text"
-            placeholder="Search for a book title or author"
-            className="w-full pl-10 pr-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Search books..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full border border-gray-300 rounded-md py-2 px-10"
           />
           <Search
-            size={20}
             className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+            size={18}
           />
         </div>
-      </div>
 
-      <div className="p-4">
-        {mockBooks.map((book) => (
-          <BookCard key={book.id} book={book} />
-        ))}
+        {/* tabs */}
+        <div className="flex overflow-x-auto space-x-2 mb-6 bg-gray-100 rounded-full p-1">
+          {tabs.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setActiveTab(tab.value)}
+              className={`
+                flex-shrink-0 px-4 py-2 rounded-full text-sm transition-colors duration-200
+                ${
+                  activeTab === tab.value
+                    ? "bg-[#00A8FF] text-white"
+                    : "text-gray-700 hover:bg-gray-200"
+                }
+                flex items-center space-x-1
+              `}
+            >
+              <span>{tab.label}</span>
+              <span
+                className={`
+                rounded-full px-1.5 py-0.5 text-xs
+                ${
+                  activeTab === tab.value
+                    ? "bg-white/30 text-white"
+                    : "bg-gray-200 text-gray-700"
+                }
+              `}
+              >
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <div className="p-4">
+          {mockBooks.map((book) => (
+            <BookCard key={book.id} book={book} />
+          ))}
+        </div>
       </div>
     </div>
   );
