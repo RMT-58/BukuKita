@@ -7,10 +7,14 @@ import {
   resolvers as bookResolvers,
   typeDefs as bookTypeDefs,
 } from "./schemas/bookSchema.js";
+import {
+  resolvers as userResolvers,
+  typeDefs as userTypeDefs,
+} from "./schemas/userSchema.js";
 
 const server = new ApolloServer({
-  typeDefs: [bookTypeDefs],
-  resolvers: [bookResolvers],
+  typeDefs: [bookTypeDefs, userTypeDefs],
+  resolvers: [bookResolvers, userResolvers],
 });
 
 const { url } = await startStandaloneServer(server, {

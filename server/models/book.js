@@ -26,11 +26,11 @@ export default class Book {
       cover_type,
       condition,
       condition_details,
-      //   thumbnail_url,
-      //   image_urls,
+      thumbnail_url,
+      image_urls,
       status,
       price,
-      //   uploaded_by,
+      uploaded_by,
     } = bookData;
 
     // validasi basic
@@ -71,11 +71,11 @@ export default class Book {
       cover_type,
       condition,
       condition_details: condition_details || "",
-      //   thumbnail_url: thumbnail_url || "",
-      //   image_urls,
+      thumbnail_url: thumbnail_url || "",
+      image_urls,
       status,
       price,
-      //   uploaded_by,
+      uploaded_by,
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -86,5 +86,42 @@ export default class Book {
       _id: result.insertedId,
       ...newBook,
     };
+  }
+
+  //! update
+  static async updateBook(id, updateData) {
+    const collection = this.getCollection();
+    const _id = new ObjectId(id);
+
+    updateData.updated_at = new Date();
+
+    const result = await collection.findOneAndUpdate(
+      { _id },
+      { $set: updateData },
+      {
+        returnDocument: "after",
+        upsert: false,
+      }
+    );
+
+    if (!result.value) {
+      //fallback data soalnya gagal terus
+      const fallback = await collection.findOne({ _id });
+      if (!fallback)
+        throw new Error(`Book with ID ${id} not found (post-update)`);
+      return fallback;
+    }
+
+    return result.value;
+  }
+
+  static async deleteBook(id) {
+    const collection = this.getCollection();
+    const _id = new ObjectId(id);
+    const result = await collection.deleteOne({ _id });
+
+    if (result.deletedCount === 0) {
+      throw new Error(`Book with ID ${id} not found`);
+    }
   }
 }
