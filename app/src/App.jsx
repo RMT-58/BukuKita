@@ -12,6 +12,7 @@ import AudioPlayer from "./pages/AudioPlayer";
 import ProfilePage from "./pages/ProfilePage";
 import EditProfilePage from "./pages/EditProfilePage";
 import CartPage from "./pages/CartPage";
+import ChatDetailPage from "./pages/ChatDetailPage";
 
 const App = () => {
   return (
@@ -24,6 +25,7 @@ const App = () => {
         <Route path="/library" element={<LibraryPage />} />
         <Route path="/add-book" element={<AddBookPage />} />
         <Route path="/chats" element={<ChatPage />} />
+        <Route path="/chats/:id" element={<ChatDetailPage />} />
         <Route path="/player" element={<AudioPlayer />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/edit-profile" element={<EditProfilePage />} />
