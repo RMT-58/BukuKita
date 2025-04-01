@@ -62,7 +62,7 @@ export default function ChatDetailPage({ params }) {
     <div className="flex flex-col h-screen">
       <header className="md:hidden bg-white p-4 border-b flex items-center">
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate(-1)}
           className="mr-4 border-none bg-transparent cursor-pointer p-1"
         >
           <ArrowLeft size={20} />
