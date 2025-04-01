@@ -31,7 +31,7 @@ const mockChat = {
   ],
 };
 
-export default function ChatDetailPage({ params }) {
+export default function ChatDetailPage() {
   const [newMessage, setNewMessage] = useState("");
   const [chat, setChat] = useState(mockChat);
   const [messages, setMessages] = useState(mockChat.messages);

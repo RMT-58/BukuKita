@@ -3,11 +3,14 @@ import React from "react";
 import { Link } from "react-router";
 
 const BookCard = ({ book, isHome }) => {
+  const handleAddToCart = () => {
+    console.log("handle add to cart");
+  };
+
   return (
     <div className="bg-white rounded-md overflow-hidden shadow-sm">
       <div className="p-4">
         <div className="flex">
-          {/* Book Cover */}
           <div className="relative w-20 h-28 bg-gray-100 rounded-md overflow-hidden">
             <img
               src={book.coverImage || "/placeholder.svg"}
@@ -18,7 +21,6 @@ const BookCard = ({ book, isHome }) => {
           </div>
 
           <div className="ml-4 flex-1">
-            {/* Book Title and Distance */}
             <div className="flex justify-between items-start">
               <Link
                 to={`/book/${book.id}`}
@@ -29,7 +31,6 @@ const BookCard = ({ book, isHome }) => {
               <div className="text-gray-500 text-sm">{book.distance}</div>
             </div>
 
-            {/* Book Details */}
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-sm">{book.author}</p>
@@ -43,7 +44,6 @@ const BookCard = ({ book, isHome }) => {
                 </Link>
               </div>
 
-              {/* Owner and Rating */}
               <div className="text-right">
                 <p className="text-sm">{book.owner}</p>
                 <div className="flex text-yellow-400 mt-1">
@@ -63,14 +63,12 @@ const BookCard = ({ book, isHome }) => {
               </div>
             </div>
 
-            {/* View Photos */}
             <div className="mt-2">
               <Link href="#" className="text-[#00A8FF] text-xs hover:underline">
                 View photos
               </Link>
             </div>
 
-            {/* Categories */}
             <div className="flex flex-wrap gap-2 mt-2">
               {book.categories.map((category, index) => (
                 <span
@@ -89,7 +87,6 @@ const BookCard = ({ book, isHome }) => {
           </div>
         </div>
 
-        {/* Availability and Rent Details */}
         <div className="mt-4 border-t pt-3">
           <div className="flex justify-between items-center">
             <div>
@@ -105,7 +102,6 @@ const BookCard = ({ book, isHome }) => {
             </div>
           </div>
 
-          {/* Buttons */}
           <div className="flex mt-3 gap-2">
             <button className="w-12 h-12 border border-[#00A8FF] text-[#00A8FF] rounded flex items-center justify-center">
               <svg
@@ -126,15 +122,15 @@ const BookCard = ({ book, isHome }) => {
             </button>
 
             {isHome ? (
-              <Link
-                href={`/rent/${book.id}`}
+              <button
+                onClick={handleAddToCart}
                 className="flex-1 bg-[#00A8FF] text-white rounded flex items-center justify-center py-2"
               >
                 Rent
-              </Link>
+              </button>
             ) : (
               <Link
-                href={`/book/${book.id}`}
+                to={`/book/${book.id}`}
                 className="flex-1 bg-[#00A8FF] text-white rounded flex items-center justify-center py-2"
               >
                 View Details
