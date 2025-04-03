@@ -24,7 +24,6 @@ const REGISTER = gql`
 function RegisterPage() {
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [address, setAddress] = useState("");
@@ -34,7 +33,7 @@ function RegisterPage() {
     onCompleted: (data) => {
       localStorage.setItem("access_token", data.register.token);
       toast.success("Registration successful! Redirecting...");
-      navigate("/");
+      setTimeout(() => navigate("/"), 1500);
     },
     onError: (error) => {
       toast.error(error.message || "Registration failed!");
@@ -64,7 +63,7 @@ function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-white">
+    <div className="min-h-screen flex flex-col items-center bg-white pb-12">
       <Toaster />
       <div className="w-full h-64 bg-blue-500 flex items-center justify-center">
         <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
@@ -153,8 +152,12 @@ function RegisterPage() {
 
           <button
             type="submit"
+            className={`w-full text-white py-2 rounded-md ${
+              loading
+                ? "bg-gray-500 cursor-not-allowed"
+                : "bg-blue-500 hover:bg-blue-600"
+            }`}
             disabled={loading}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-md"
           >
             Register
           </button>
@@ -163,7 +166,7 @@ function RegisterPage() {
         <div className="mt-4 text-center">
           <p className="text-sm text-gray-600">
             Already have an account?{" "}
-            <Link to="/auth/login" className="text-blue-500 hover:underline">
+            <Link to="/login" className="text-blue-500 hover:underline">
               Login
             </Link>
           </p>

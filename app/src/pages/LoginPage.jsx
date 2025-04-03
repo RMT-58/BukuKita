@@ -1,18 +1,66 @@
 import React, { useState } from "react";
 import { Upload } from "lucide-react";
 import logo from "../assets/logo.png";
+import { Link, useNavigate } from "react-router";
+import { gql, useMutation } from "@apollo/client";
+import { Toaster, toast } from "react-hot-toast";
+
+const LOGIN = gql`
+  mutation Login($input: LoginInput!) {
+    login(input: $input) {
+      user {
+        _id
+        name
+        username
+        phone_number
+        address
+        created_at
+        updated_at
+      }
+      token
+    }
+  }
+`;
 
 function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const [login, { loading }] = useMutation(LOGIN, {
+    onCompleted: (data) => {
+      localStorage.setItem("access_token", data.login.token);
+      toast.success("Login successful! Redirecting...");
+      setTimeout(() => navigate("/"), 1500);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Registration failed!");
+      console.log(error);
+    },
+  });
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    console.log("Logging in with:", email);
+
+    if (loading) return;
+
+    try {
+      await login({
+        variables: {
+          input: {
+            username,
+            password,
+          },
+        },
+      });
+    } catch (error) {
+      console.log("error during logged in", error);
+    }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-white">
+    <div className="min-h-screen flex flex-col items-center bg-white pb-12">
+      <Toaster />
       <div className="w-full h-64 bg-blue-500 flex items-center justify-center">
         <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
           <img src={logo} alt="Burung Hantu" />
@@ -25,14 +73,14 @@ function LoginPage() {
         <form onSubmit={handleLogin} className="w-full space-y-4">
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">
-              Email
+              Username
             </label>
             <input
-              id="email"
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="username"
+              type="username"
+              placeholder="Enter your username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
               className="w-full p-2 border border-gray-300 rounded-md"
             />
@@ -52,10 +100,14 @@ function LoginPage() {
               className="w-full p-2 border border-gray-300 rounded-md"
             />
           </div>
-
           <button
             type="submit"
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-md"
+            className={`w-full text-white py-2 rounded-md ${
+              loading
+                ? "bg-gray-500 cursor-not-allowed"
+                : "bg-blue-500 hover:bg-blue-600"
+            }`}
+            disabled={loading}
           >
             Login
           </button>
@@ -64,9 +116,9 @@ function LoginPage() {
         <div className="mt-4 text-center">
           <p className="text-sm text-gray-600">
             Don't have an account?{" "}
-            <a href="/auth/register" className="text-blue-500 hover:underline">
+            <Link to="/register" className="text-blue-500 hover:underline">
               Register
-            </a>
+            </Link>
           </p>
         </div>
       </div>
