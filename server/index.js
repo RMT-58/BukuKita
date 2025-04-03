@@ -59,6 +59,10 @@ const { url } = await startStandaloneServer(server, {
 
     return { user };
   },
+  cors: {
+    origin: "*",
+    credentials: true,
+  },
 });
 
 console.log(`🚀  Server ready at: ${url}`);

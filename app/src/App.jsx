@@ -14,24 +14,31 @@ import EditProfilePage from "./pages/EditProfilePage";
 import CartPage from "./pages/CartPage";
 import ChatDetailPage from "./pages/ChatDetailPage";
 import BookDetailPage from "./pages/BookDetailPage";
+import PublicLayout from "./layouts/PublicLayout";
+import PrivateLayout from "./layouts/PrivateLayout";
 
 const App = () => {
   return (
     <BrowserRouter>
-      <Navbar />
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/library" element={<LibraryPage />} />
-        <Route path="/add-book" element={<AddBookPage />} />
-        <Route path="/chats" element={<ChatPage />} />
-        <Route path="/chats/:id" element={<ChatDetailPage />} />
-        <Route path="/player" element={<AudioPlayer />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/edit-profile" element={<EditProfilePage />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/book/:id" element={<BookDetailPage />} />
+        <Route path="/" element={<PublicLayout />}>
+          <Route path="/public" element={<div>Public</div>} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+        </Route>
+
+        <Route path="/" element={<PrivateLayout />}>
+          <Route index element={<HomePage />} />
+          <Route path="/library" element={<LibraryPage />} />
+          <Route path="/add-book" element={<AddBookPage />} />
+          <Route path="/chats" element={<ChatPage />} />
+          <Route path="/chats/:id" element={<ChatDetailPage />} />
+          <Route path="/player" element={<AudioPlayer />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/edit-profile" element={<EditProfilePage />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/book/:id" element={<BookDetailPage />} />
+        </Route>
 
         <Route path="*" element={<NotFound />} />
       </Routes>

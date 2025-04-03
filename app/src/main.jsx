@@ -17,6 +17,7 @@ const httpLink = createHttpLink({
 const authLink = setContext((_, { headers }) => {
   // Ambil token dari localStorage untuk web
   const token = localStorage.getItem("access_token");
+  console.log("TOKEN:", token);
 
   return {
     headers: {
