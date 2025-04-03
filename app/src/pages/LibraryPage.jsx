@@ -1,10 +1,11 @@
-import { Search } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
-import { useQuery, gql } from "@apollo/client";
-import BookCard from "../components/BookCard";
-import MyBookCard from "../components/MyBookCard";
+"use client";
 
-// GraphQL query for fetching user's books
+import { Search } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery, gql } from "@apollo/client";
+import MyBookCard from "../components/MyBookCard";
+import RentalCard from "../components/RentalCard";
+
 const GET_MY_BOOKS = gql`
   query MyBooks {
     myBooks {
@@ -27,104 +28,69 @@ const GET_MY_BOOKS = gql`
   }
 `;
 
-const mockRentedBooks = [
-  {
-    id: "1",
-    book: {
-      id: "1",
-      title: "Vision of the Anointed",
-      author: "Thomas Sowell",
-      coverImage:
-        "https://upload.wikimedia.org/wikipedia/en/d/d1/The_vision_of_the_annointed_bookcover.jpg",
-      format: "Paperback",
-      condition: "8.5/10",
-      distance: "3km",
-      owner: "Justin James",
-      rating: 5,
-      categories: ["Economics", "Non-fiction", "Politics"],
-      availablePeriod: "1 year (12/04/2025 - 12/04/2026)",
-      price: 5000,
-      currency: "Rp",
-    },
-    expiresAt: "2024-12-31",
-    status: "active",
-  },
-  {
-    id: "2",
-    book: {
-      id: "2",
-      title: "Vision of the Anointed",
-      author: "Thomas Sowell",
-      coverImage:
-        "https://upload.wikimedia.org/wikipedia/en/d/d1/The_vision_of_the_annointed_bookcover.jpg",
-      format: "Hardcover",
-      condition: "8.0/10",
-      distance: "7.5km",
-      owner: "Josh R.",
-      rating: 5,
-      categories: ["Economics", "Non-fiction", "Politics"],
-      availablePeriod: "2 months (12/04/2025 - 12/06/2025)",
-      price: 7000,
-      currency: "Rp",
-    },
-    expiresAt: "2024-06-25",
-    status: "active",
-  },
-  {
-    id: "3",
-    book: {
-      id: "3",
-      title: "1984",
-      author: "George Orwell",
-      coverImage: "https://cdn.gramedia.com/uploads/items/9780451524935.jpg",
-      format: "Paperback",
-      condition: "7.5/10",
-      distance: "5km",
-      owner: "Sarah M.",
-      rating: 4.5,
-      categories: ["Fiction", "Dystopian", "Classics"],
-      availablePeriod: "3 months (12/04/2025 - 12/07/2025)",
-      price: 4500,
-      currency: "Rp",
-    },
-    expiresAt: "2023-12-15",
-    status: "active",
-  },
-  {
-    id: "4",
-    book: {
-      id: "4",
-      title: "1984",
-      author: "George Orwell",
-      coverImage: "https://cdn.gramedia.com/uploads/items/9780451524935.jpg",
-      format: "Paperback",
-      condition: "7.5/10",
-      distance: "5km",
-      owner: "Sarah M.",
-      rating: 4.5,
-      categories: ["Fiction", "Dystopian", "Classics"],
-      availablePeriod: "3 months (12/04/2025 - 12/07/2025)",
-      price: 4500,
-      currency: "Rp",
-    },
-    expiresAt: "2025-12-15",
-    status: "active",
-  },
-];
+const GET_MY_RENTALS = gql`
+  query MyRentals {
+    myRentals {
+      _id
+      user_id
+      total_amount
+      status
+      payment_method
+      paid_date
+      created_at
+      updated_at
+      details {
+        _id
+        book_id
+        price
+        period
+        total
+        title
+        author
+        genres
+        synopsis
+        cover_type
+        thumbnail_url
+        image_urls
+        rental_id
+        rental_start
+        rental_end
+        created_at
+        updated_at
+      }
+    }
+  }
+`;
 
 const LibraryPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("active");
 
-  const { loading, error, data, refetch } = useQuery(GET_MY_BOOKS, {
+  const {
+    loading: loadingBooks,
+    error: errorBooks,
+    data: booksData,
+    refetch: refetchBooks,
+  } = useQuery(GET_MY_BOOKS, {
     skip: activeTab !== "mybooks",
+  });
+
+  const {
+    loading: loadingRentals,
+    error: errorRentals,
+    data: rentalsData,
+    refetch: refetchRentals,
+  } = useQuery(GET_MY_RENTALS, {
+    skip: activeTab === "mybooks",
   });
 
   useEffect(() => {
     if (activeTab === "mybooks") {
-      refetch();
+      refetchBooks();
+    } else {
+      refetchRentals();
     }
-  }, [activeTab, refetch]);
+  }, [activeTab, refetchBooks, refetchRentals]);
 
   const currentDate = useMemo(() => {
     const date = new Date();
@@ -132,40 +98,80 @@ const LibraryPage = () => {
     return date;
   }, []);
 
+  const filteredRentals = useMemo(() => {
+    if (
+      loadingRentals ||
+      errorRentals ||
+      !rentalsData ||
+      !rentalsData.myRentals
+    ) {
+      return [];
+    }
+
+    return rentalsData.myRentals.filter((rental) => {
+      // Filter by tab
+      if (activeTab === "pending" && rental.status !== "pending") {
+        return false;
+      }
+
+      if (activeTab !== "pending" && rental.status === "pending") {
+        return false;
+      }
+
+      // For active and history tabs, check rental dates
+      if (
+        activeTab !== "pending" &&
+        rental.details &&
+        rental.details.length > 0
+      ) {
+        const isExpired = rental.details.some((detail) => {
+          const rentalEndDate = Number(detail.rental_end);
+          return new Date(rentalEndDate) <= currentDate;
+        });
+
+        if (
+          (activeTab === "active" && isExpired) ||
+          (activeTab === "history" && !isExpired)
+        ) {
+          return false;
+        }
+      }
+
+      // Filter by search query
+      if (searchQuery && rental.details && rental.details.length > 0) {
+        return rental.details.some(
+          (detail) =>
+            detail.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            detail.author.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      }
+
+      return true;
+    });
+  }, [
+    activeTab,
+    currentDate,
+    loadingRentals,
+    errorRentals,
+    rentalsData,
+    searchQuery,
+  ]);
+
   const filteredBooks = useMemo(() => {
     if (activeTab === "mybooks") {
-      // Handle the case when data is loading or there's an error
-      if (loading || error || !data || !data.myBooks) {
+      if (loadingBooks || errorBooks || !booksData || !booksData.myBooks) {
         return [];
       }
 
-      // Filter myBooks based on search query
-      return data.myBooks.filter(
+      return booksData.myBooks.filter(
         (book) =>
           book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           book.author.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
-    // For active and history tabs, filter rented books
-    return mockRentedBooks.filter((rental) => {
-      const isMatchingSearch =
-        rental.book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        rental.book.author.toLowerCase().includes(searchQuery.toLowerCase());
-
-      // Determine book status based on expiration
-      const expirationDate = new Date(rental.expiresAt);
-
-      if (activeTab === "active") {
-        // Active tab shows books not yet expired
-        return isMatchingSearch && expirationDate > currentDate;
-      } else if (activeTab === "history") {
-        // History tab shows expired books
-        return isMatchingSearch && expirationDate <= currentDate;
-      }
-      return false;
-    });
-  }, [searchQuery, activeTab, currentDate, data, loading, error]);
+    return [];
+  }, [activeTab, booksData, errorBooks, loadingBooks, searchQuery]);
 
   return (
     <div className="pb-20 md:pb-0 bg-gray-50 min-h-screen">
@@ -187,59 +193,72 @@ const LibraryPage = () => {
           />
         </div>
 
-        {/* tabs */}
-        <div className="flex mb-6">
+        <div className="flex mb-6 rounded-lg overflow-hidden shadow-sm">
           <button
             onClick={() => setActiveTab("active")}
-            className={`flex-1 py-2 ${
+            className={`flex-1 py-3 font-medium transition-all duration-200 ${
               activeTab === "active"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-gray-700"
-            } first:rounded-l-md`}
+                ? "bg-[#00A8FF] text-white"
+                : "bg-white text-gray-700 hover:bg-gray-100"
+            }`}
           >
             Active
           </button>
           <button
+            onClick={() => setActiveTab("pending")}
+            className={`flex-1 py-3 font-medium transition-all duration-200 ${
+              activeTab === "pending"
+                ? "bg-[#00A8FF] text-white"
+                : "bg-white text-gray-700 hover:bg-gray-100"
+            } border-x border-gray-200`}
+          >
+            Pending
+          </button>
+          <button
             onClick={() => setActiveTab("history")}
-            className={`flex-1 py-2 ${
+            className={`flex-1 py-3 font-medium transition-all duration-200 ${
               activeTab === "history"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-gray-700"
-            }`}
+                ? "bg-[#00A8FF] text-white"
+                : "bg-white text-gray-700 hover:bg-gray-100"
+            } border-r border-gray-200`}
           >
             History
           </button>
           <button
             onClick={() => setActiveTab("mybooks")}
-            className={`flex-1 py-2 ${
+            className={`flex-1 py-3 font-medium transition-all duration-200 ${
               activeTab === "mybooks"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-gray-700"
-            } last:rounded-r-md`}
+                ? "bg-[#00A8FF] text-white"
+                : "bg-white text-gray-700 hover:bg-gray-100"
+            }`}
           >
             My Books
           </button>
         </div>
 
-        {/* Loading state */}
-        {activeTab === "mybooks" && loading ? (
+        {(activeTab === "mybooks" && loadingBooks) ||
+        (activeTab !== "mybooks" && loadingRentals) ? (
           <div className="text-center py-8">
-            <p className="text-gray-500">Loading your books...</p>
+            <p className="text-gray-500">Loading...</p>
           </div>
-        ) : activeTab === "mybooks" && error ? (
+        ) : (activeTab === "mybooks" && errorBooks) ||
+          (activeTab !== "mybooks" && errorRentals) ? (
           <div className="text-center py-8">
             <p className="text-red-500">
-              Error loading your books. Please try again.
+              Error loading data. Please try again.
             </p>
           </div>
-        ) : filteredBooks.length === 0 ? (
+        ) : (activeTab === "mybooks" && filteredBooks.length === 0) ||
+          (activeTab !== "mybooks" && filteredRentals.length === 0) ? (
           <div className="text-center py-8">
             <p className="text-gray-500">
               {activeTab === "active"
                 ? "No active rentals"
-                : activeTab === "history"
-                  ? "No rental history found"
-                  : "You haven't uploaded any books yet"}
+                : activeTab === "pending"
+                  ? "No pending rentals"
+                  : activeTab === "history"
+                    ? "No rental history found"
+                    : "You haven't uploaded any books yet"}
             </p>
             {activeTab === "mybooks" && (
               <button
@@ -252,19 +271,31 @@ const LibraryPage = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredBooks.map((item) => {
-              if (activeTab === "mybooks") {
-                return <MyBookCard key={item._id} book={item} />;
-              } else {
-                return (
-                  <BookCard
-                    key={item.book.id}
-                    book={item.book}
-                    isHome={false}
-                  />
-                );
-              }
-            })}
+            {activeTab === "mybooks"
+              ? filteredBooks.map((book) => (
+                  <MyBookCard key={book._id} book={book} />
+                ))
+              : filteredRentals.map((rental) => (
+                  <div key={rental._id}>
+                    {rental.details && rental.details.length > 0 ? (
+                      // If rental has details, render a card for each detail
+                      rental.details.map((detail) => (
+                        <RentalCard
+                          key={detail._id}
+                          rental={rental}
+                          detail={detail}
+                        />
+                      ))
+                    ) : (
+                      // If rental has no details, render a single card
+                      <RentalCard
+                        key={rental._id}
+                        rental={rental}
+                        detail={null}
+                      />
+                    )}
+                  </div>
+                ))}
           </div>
         )}
       </div>
