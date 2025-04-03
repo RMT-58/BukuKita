@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 import { getDb } from "../config/mongodb.js";
+import RentalDetail from "./rentalDetail.js"; // Import RentalDetail
 
 export default class Book {
   static getCollection() {
@@ -47,21 +48,19 @@ export default class Book {
     if (typeof condition !== "number" || condition < 0 || condition > 10) {
       throw new Error("Condition must be a number between 0 and 10");
     }
-    // if (
-    //   !Array.isArray(image_urls) ||
-    //   image_urls.some((u) => typeof u !== "string")
-    // ) {
-    //   throw new Error("Image URLs must be an array of strings");
-    // }
     if (!["isClosed", "forRent"].includes(status)) {
       throw new Error("Status must be either 'isClosed' or 'forRent'");
     }
     if (typeof price !== "number" || price < 0) {
       throw new Error("Price must be a positive number");
     }
-    // if (!uploaded_by || typeof uploaded_by !== "number") {
-    //   throw new Error("uploaded_by must be a user ID (number)");
-    // }
+    if (!uploaded_by) {
+      throw new Error("uploaded_by is required");
+    }
+
+    // Convert uploaded_by to ObjectId if it's a string
+    const uploaded_by_id =
+      typeof uploaded_by === "string" ? new ObjectId(uploaded_by) : uploaded_by;
 
     const newBook = {
       title,
@@ -75,7 +74,7 @@ export default class Book {
       image_urls,
       status,
       price,
-      uploaded_by,
+      uploaded_by: uploaded_by_id,
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -123,5 +122,76 @@ export default class Book {
     if (result.deletedCount === 0) {
       throw new Error(`Book with ID ${id} not found`);
     }
+  }
+
+  //searching
+  static async searchBooks(query, options = {}) {
+    const collection = this.getCollection();
+    const { limit = 20, skip = 0, sort = { created_at: -1 } } = options;
+
+    const searchQuery = {
+      $or: [
+        { title: { $regex: query, $options: "i" } },
+        { author: { $regex: query, $options: "i" } },
+        { genres: { $regex: query, $options: "i" } },
+      ],
+    };
+
+    return await collection
+      .find(searchQuery)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
+      .toArray();
+  }
+
+  static async filterBooks(filters, options = {}) {
+    const collection = this.getCollection();
+    const { limit = 20, skip = 0, sort = { created_at: -1 } } = options;
+
+    const query = {};
+
+    if (filters.status) {
+      query.status = filters.status;
+    }
+
+    if (filters.minPrice !== undefined) {
+      query.price = { $gte: filters.minPrice };
+    }
+
+    if (filters.maxPrice !== undefined) {
+      query.price = { ...query.price, $lte: filters.maxPrice };
+    }
+
+    if (filters.genres && filters.genres.length > 0) {
+      query.genres = { $in: filters.genres };
+    }
+
+    if (filters.cover_type) {
+      query.cover_type = filters.cover_type;
+    }
+
+    return await collection
+      .find(query)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
+      .toArray();
+  }
+
+  // cek bukunya available ga (apa udh dipinjem)
+  static async isBookAvailable(id) {
+    const currentDate = new Date();
+    const rentalDetails = await RentalDetail.findActiveRentalsByBookId(id);
+    return rentalDetails.length === 0;
+  }
+
+  // Find books by uploader
+  static async findBooksByUploaderId(uploaderId) {
+    const collection = this.getCollection();
+    const uploaded_by =
+      typeof uploaderId === "string" ? new ObjectId(uploaderId) : uploaderId;
+
+    return await collection.find({ uploaded_by }).toArray();
   }
 }
