@@ -40,7 +40,7 @@ function BookDetailPage({ bookId }) {
 
   return (
     <div className="pb-20">
-      <header className="bg-white p-4 border-b flex items-center">
+      <header className="bg-white md:hidden p-4 border-b flex items-center">
         <Link to={-1} className="mr-4">
           <ArrowLeft size={20} />
         </Link>

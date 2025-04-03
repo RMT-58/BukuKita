@@ -1,10 +1,8 @@
-"use client";
-
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, gql } from "@apollo/client";
 import MyBookCard from "../components/MyBookCard";
-import RentalCard from "../components/RentalCard";
+import RentalDetailsModal from "../components/RentalDetailsModal";
 
 const GET_MY_BOOKS = gql`
   query MyBooks {
@@ -65,6 +63,8 @@ const GET_MY_RENTALS = gql`
 const LibraryPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("active");
+  const [selectedRental, setSelectedRental] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const {
     loading: loadingBooks,
@@ -97,6 +97,16 @@ const LibraryPage = () => {
     date.setHours(0, 0, 0, 0);
     return date;
   }, []);
+
+  const openRentalDetails = (rental) => {
+    setSelectedRental(rental);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedRental(null);
+  };
 
   const filteredRentals = useMemo(() => {
     if (
@@ -169,6 +179,12 @@ const LibraryPage = () => {
 
     return [];
   }, [activeTab, booksData, errorBooks, loadingBooks, searchQuery]);
+
+  const formatDate = (timestamp) => {
+    if (!timestamp) return "N/A";
+    const date = new Date(Number(timestamp));
+    return date.toLocaleDateString();
+  };
 
   return (
     <div className="pb-20 md:pb-0 bg-gray-50 min-h-screen">
@@ -273,27 +289,64 @@ const LibraryPage = () => {
                   <MyBookCard key={book._id} book={book} />
                 ))
               : filteredRentals.map((rental) => (
-                  <div key={rental._id}>
-                    {rental.details && rental.details.length > 0 ? (
-                      rental.details.map((detail) => (
-                        <RentalCard
-                          key={detail._id}
-                          rental={rental}
-                          detail={detail}
-                        />
-                      ))
-                    ) : (
-                      <RentalCard
-                        key={rental._id}
-                        rental={rental}
-                        detail={null}
-                      />
-                    )}
+                  <div
+                    key={rental._id}
+                    className="bg-white rounded-lg shadow p-4"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="font-medium">
+                          Order #{rental._id.substring(rental._id.length - 6)}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {formatDate(rental.created_at)}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            rental.status === "completed"
+                              ? "bg-green-100 text-green-800"
+                              : rental.status === "pending"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {rental.status.charAt(0).toUpperCase() +
+                            rental.status.slice(1)}
+                        </div>
+                        <div className="font-semibold">
+                          Rp {rental.total_amount.toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex justify-between items-center">
+                      <div className="text-sm">
+                        <span className="text-gray-500">Books: </span>
+                        {rental.details && rental.details.length} items
+                      </div>
+                      <button
+                        onClick={() => openRentalDetails(rental)}
+                        className="text-[#00A8FF] text-sm font-medium hover:underline"
+                      >
+                        View Details
+                      </button>
+                    </div>
                   </div>
                 ))}
           </div>
         )}
       </div>
+
+      {isModalOpen && selectedRental && (
+        <RentalDetailsModal
+          rental={selectedRental}
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          formatDate={formatDate}
+        />
+      )}
     </div>
   );
 };
