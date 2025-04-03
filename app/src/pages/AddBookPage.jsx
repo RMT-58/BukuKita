@@ -81,7 +81,6 @@ const AddBookPage = () => {
     </div>
   );
 
-  // Custom button component
   const Button = ({ type, disabled, className, children }) => (
     <button
       type={type}
