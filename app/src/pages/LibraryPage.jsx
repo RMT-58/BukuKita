@@ -109,7 +109,6 @@ const LibraryPage = () => {
     }
 
     return rentalsData.myRentals.filter((rental) => {
-      // Filter by tab
       if (activeTab === "pending" && rental.status !== "pending") {
         return false;
       }
@@ -118,7 +117,6 @@ const LibraryPage = () => {
         return false;
       }
 
-      // For active and history tabs, check rental dates
       if (
         activeTab !== "pending" &&
         rental.details &&
@@ -137,7 +135,6 @@ const LibraryPage = () => {
         }
       }
 
-      // Filter by search query
       if (searchQuery && rental.details && rental.details.length > 0) {
         return rental.details.some(
           (detail) =>
@@ -278,7 +275,6 @@ const LibraryPage = () => {
               : filteredRentals.map((rental) => (
                   <div key={rental._id}>
                     {rental.details && rental.details.length > 0 ? (
-                      // If rental has details, render a card for each detail
                       rental.details.map((detail) => (
                         <RentalCard
                           key={detail._id}
@@ -287,7 +283,6 @@ const LibraryPage = () => {
                         />
                       ))
                     ) : (
-                      // If rental has no details, render a single card
                       <RentalCard
                         key={rental._id}
                         rental={rental}

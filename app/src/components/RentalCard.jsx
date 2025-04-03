@@ -212,12 +212,12 @@ const RentalCard = ({ rental, detail, isHome = false }) => {
             <div className="mt-3">
               <button
                 onClick={() => navigate(`/payment/${rental._id}`)}
-                disabled={isRentalExpired()} // Disable if expired
+                disabled={isRentalExpired()} 
                 className={`w-full rounded flex items-center justify-center py-2 
                 ${
                   isRentalExpired()
                     ? "bg-gray-400 text-gray-700 cursor-not-allowed" // Disabled style
-                    : "bg-green-500 text-white" // Active style
+                    : "bg-green-500 text-white" 
                 }`}
               >
                 {isRentalExpired() ? "Expired" : "Complete Payment"}
