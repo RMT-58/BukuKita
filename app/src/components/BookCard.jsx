@@ -1,11 +1,13 @@
 import { Star } from "lucide-react";
 import React from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 const BookCard = ({ book, isHome }) => {
   const handleAddToCart = () => {
     console.log("handle add to cart");
   };
+
+  const navigate = useNavigate();
 
   return (
     <div className="bg-white rounded-md overflow-hidden shadow-sm">
@@ -103,7 +105,10 @@ const BookCard = ({ book, isHome }) => {
           </div>
 
           <div className="flex mt-3 gap-2">
-            <button className="w-12 h-12 border border-[#00A8FF] text-[#00A8FF] rounded flex items-center justify-center">
+            <button
+              onClick={() => navigate(`/chat/${book.id}`)}
+              className="w-12 h-12 border border-[#00A8FF] text-[#00A8FF] rounded flex items-center justify-center"
+            >
               <svg
                 width="24"
                 height="24"
