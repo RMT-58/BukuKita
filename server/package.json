@@ -10,11 +10,19 @@
   },
   "dependencies": {
     "@apollo/server": "^4.11.3",
+    "@graphql-tools/schema": "^10.0.23",
     "bcryptjs": "^3.0.2",
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.7",
+    "express": "^5.1.0",
     "graphql": "^16.10.0",
+    "graphql-subscriptions": "^3.0.0",
+    "graphql-ws": "^6.0.4",
     "jsonwebtoken": "^9.0.2",
-    "mongodb": "^6.15.0"
+    "mongodb": "^6.15.0",
+    "socket.io": "^4.8.1",
+    "ws": "^8.18.1"
   },
   "devDependencies": {
     "jest": "^29.7.0",
