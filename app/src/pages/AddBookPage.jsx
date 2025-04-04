@@ -1,8 +1,28 @@
 import { ArrowLeft, Upload, Plus, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { toast, Toaster } from "react-hot-toast";
 import { gql, useMutation } from "@apollo/client";
+
+const GET_IMAGEKIT_AUTH_PARAMS = gql`
+  mutation GetImageKitAuthParams {
+    getImageKitAuthParams {
+      token
+      expire
+      signature
+    }
+  }
+`;
+
+const UPLOAD_IMAGE_MUTATION = gql`
+  mutation UploadImage($input: ImageUploadInput!) {
+    uploadImage(input: $input) {
+      url
+      fileId
+      name
+    }
+  }
+`;
 
 const ADD_BOOK_MUTATION = gql`
   mutation AddBook($input: AddBookInput!) {
@@ -77,6 +97,22 @@ function AddBookPage() {
   });
 
   const [errorMessage, setErrorMessage] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+
+  //state untuk imagekit auth
+  const [imageKitAuth, setImageKitAuth] = useState(null);
+
+  const [getImageKitAuthParams] = useMutation(GET_IMAGEKIT_AUTH_PARAMS, {
+    onCompleted: (data) => {
+      setImageKitAuth(data.getImageKitAuthParams);
+    },
+    onError: (error) => {
+      console.error("Error getting ImageKit auth params:", error);
+      toast.error("Failed to initialize image upload");
+    },
+  });
+
+  const [uploadImage] = useMutation(UPLOAD_IMAGE_MUTATION);
 
   const [addBook, { loading }] = useMutation(ADD_BOOK_MUTATION, {
     onCompleted: () => {
@@ -94,6 +130,11 @@ function AddBookPage() {
   const [thumbnailPreview, setThumbnailPreview] = useState(null);
   const [additionalImages, setAdditionalImages] = useState([]);
   const [additionalPreviews, setAdditionalPreviews] = useState([]);
+
+  // mengambil imageKit auth
+  useEffect(() => {
+    getImageKitAuthParams();
+  }, [getImageKitAuthParams]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -138,41 +179,93 @@ function AddBookPage() {
     setAdditionalPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Function untuk upload image dan dapat url nanti pakai cloudinary
+  // ubah file ke base64
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   const uploadImages = async () => {
-    //ini masih placeholder
+    if (!imageKitAuth) {
+      throw new Error("Image upload not initialized");
+    }
 
+    setIsUploading(true);
     try {
-      // mock upload function
-      const mockUpload = async (file) => {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        return `https://your-upload-service.com/${file.name}`;
-      };
-
+      // Upload thumbnail
       let thumbnailUrl = "";
       if (thumbnailFile) {
-        thumbnailUrl = await mockUpload(thumbnailFile);
+        const base64Thumbnail = await fileToBase64(thumbnailFile);
+        const fileName = `thumbnail_${Date.now()}_${thumbnailFile.name}`;
+
+        const { data } = await uploadImage({
+          variables: {
+            input: {
+              file: base64Thumbnail,
+              fileName,
+              folder: "books/thumbnails",
+            },
+          },
+        });
+
+        thumbnailUrl = data.uploadImage.url;
       }
 
+      // Upload image tambahan
       const imageUrls = [];
       for (const file of additionalImages) {
-        const url = await mockUpload(file);
-        imageUrls.push(url);
+        const base64Image = await fileToBase64(file);
+        const fileName = `image_${Date.now()}_${file.name}`;
+
+        const { data } = await uploadImage({
+          variables: {
+            input: {
+              file: base64Image,
+              fileName,
+              folder: "books/images",
+            },
+          },
+        });
+
+        imageUrls.push(data.uploadImage.url);
       }
 
       return { thumbnailUrl, imageUrls };
     } catch (error) {
       console.error("Error uploading images:", error);
-      throw new Error("Failed to upload images");
+      throw new Error("Failed to upload images: " + error.message);
+    } finally {
+      setIsUploading(false);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log("Form data:", formData);
+    if (!formData.title || !formData.author) {
+      setErrorMessage("Title and author are required!");
+      toast.error("Title and author are required!");
+      return;
+    }
+
+    if (!thumbnailFile) {
+      setErrorMessage("Please upload a thumbnail image");
+      toast.error("Please upload a thumbnail image");
+      return;
+    }
+
+    let loadingToast;
     try {
+      loadingToast = toast.loading("Uploading images...");
+
       const { thumbnailUrl, imageUrls } = await uploadImages();
+
+      toast.dismiss(loadingToast);
+      loadingToast = toast.loading("Adding book to database...");
 
       const input = {
         ...formData,
@@ -183,10 +276,14 @@ function AddBookPage() {
       };
 
       await addBook({ variables: { input } });
+
+      toast.dismiss(loadingToast);
+      toast.success("Book added successfully!");
     } catch (err) {
       console.error("Error adding book:", err);
-      setErrorMessage("Failed to add book. Please try again.");
-      toast.error("Failed to add book. Please try again.");
+      setErrorMessage("Failed to add book: " + err.message);
+      toast.error("Failed to add book: " + err.message);
+      if (loadingToast) toast.dismiss(loadingToast);
     }
   };
 
@@ -213,7 +310,7 @@ function AddBookPage() {
           <div className="flex flex-col md:flex-row gap-6">
             <div className="flex flex-col items-center">
               <label className="block text-sm font-medium mb-2 self-start">
-                Cover Image
+                Cover Image*
               </label>
               <div className="relative w-40 h-56 bg-gray-100 rounded-md overflow-hidden border-2 border-dashed border-gray-300 flex flex-col items-center justify-center">
                 {thumbnailPreview ? (
@@ -389,7 +486,7 @@ function AddBookPage() {
                 className="w-full p-2 border border-gray-300 rounded-md"
               >
                 {statusOptions.map((status) => (
-                  <option key={status} value={status.toLowerCase()}>
+                  <option key={status} value={status}>
                     {status}
                   </option>
                 ))}
@@ -475,12 +572,18 @@ function AddBookPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || isUploading || !imageKitAuth}
             className={`w-full bg-[#00A8FF] hover:bg-[#0096e0] text-white py-3 rounded-md font-medium ${
-              loading ? "opacity-70 cursor-not-allowed" : ""
+              loading || isUploading || !imageKitAuth
+                ? "opacity-70 cursor-not-allowed"
+                : ""
             }`}
           >
-            {loading ? "Adding Book..." : "Add Book"}
+            {isUploading
+              ? "Uploading Images..."
+              : loading
+                ? "Adding Book..."
+                : "Add Book"}
           </button>
         </form>
       </div>
