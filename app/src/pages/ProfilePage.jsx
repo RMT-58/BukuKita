@@ -112,7 +112,7 @@ const ProfilePage = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("access_token");
-    navigate("/login");
+    navigate("/public");
   };
 
   const handleEditProfile = () => {
