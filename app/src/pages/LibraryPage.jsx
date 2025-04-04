@@ -287,15 +287,13 @@ const LibraryPage = () => {
 
         {(activeTab === "mybooks" && loadingBooks) ||
         (activeTab !== "mybooks" && loadingRentals) ? (
-          <div className="text-center py-8">
-            <p className="text-gray-500">Loading...</p>
+          <div className="flex flex-col items-center justify-center min-h-screen p-4">
+            <div className="w-16 h-16 border-4 border-t-blue-500 border-b-blue-500 rounded-full animate-spin"></div>
           </div>
         ) : (activeTab === "mybooks" && errorBooks) ||
           (activeTab !== "mybooks" && errorRentals) ? (
           <div className="text-center py-8">
-            <p className="text-red-500">
-              Error loading data. Please try again.
-            </p>
+            <div className="w-16 h-16 border-4 border-t-blue-500 border-b-blue-500 rounded-full animate-spin"></div>
           </div>
         ) : (activeTab === "mybooks" && filteredBooks.length === 0) ||
           (activeTab !== "mybooks" && filteredRentals.length === 0) ? (
