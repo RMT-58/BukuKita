@@ -187,7 +187,7 @@ export async function createApolloServer(options = {}) {
     })
   );
 
-  app.use(express.json());
+  app.use("/graphql", express.json());
 
   // Create Apollo Server
   const server = new ApolloServer({
