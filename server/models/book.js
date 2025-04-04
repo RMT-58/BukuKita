@@ -54,7 +54,7 @@ export default class Book {
       queryObject.cover_type = filters.cover_type;
     }
 
-    // ! gaperlu deh males
+    // ! gaperlu deh males WKWKWK
     // if (filters.uploaded_by) {
     //   const uploaded_by =
     //     typeof filters.uploaded_by === "string" ? new ObjectId(filters.uploaded_by): filters.uploaded_by;
