@@ -65,13 +65,13 @@ function AddBookPage() {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    title: "a",
-    author: "b",
-    synopsis: "c",
-    price: "d",
-    cover_type: "e",
+    title: "",
+    author: "",
+    synopsis: "",
+    price: "",
+    cover_type: "",
     condition: 0,
-    condition_details: "g",
+    condition_details: "",
     status: "forRent",
     genres: [],
   });
