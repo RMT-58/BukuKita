@@ -12,12 +12,17 @@
   "dependencies": {
     "@apollo/client": "^3.13.5",
     "@tailwindcss/vite": "^4.0.17",
+    "framer-motion": "^12.6.3",
     "graphql": "^16.10.0",
+    "gsap": "^3.12.7",
+    "lottie-react": "^2.4.1",
     "lucide-react": "^0.484.0",
     "react": "^19.0.0",
+    "react-countup": "^6.5.3",
     "react-dom": "^19.0.0",
     "react-hot-toast": "^2.5.2",
-    "react-router": "^7.4.0"
+    "react-router": "^7.4.0",
+    "swiper": "^11.2.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",

@@ -16,13 +16,14 @@ import ChatDetailPage from "./pages/ChatDetailPage";
 import BookDetailPage from "./pages/BookDetailPage";
 import PublicLayout from "./layouts/PublicLayout";
 import PrivateLayout from "./layouts/PrivateLayout";
+import PublicPage from "./pages/PublicPage";
 
 const App = () => {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<PublicLayout />}>
-          <Route path="/public" element={<div>Public</div>} />
+          <Route path="/public" element={<PublicPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
         </Route>
