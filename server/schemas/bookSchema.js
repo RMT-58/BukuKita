@@ -1,4 +1,5 @@
 import Book from "../models/book.js";
+import User from "../models/user.js";
 import { requireAuth } from "../utils/auth.js";
 
 export const typeDefs = `#graphql
@@ -26,7 +27,8 @@ export const typeDefs = `#graphql
       image_urls: [String]
       status: BookStatus!
       price: Int!
-      uploaded_by: ID!
+      uploader_id: ID!
+      uploaded_by: User
       created_at: String!
       updated_at: String!
     }
@@ -75,10 +77,8 @@ export const typeDefs = `#graphql
     }
 
     type Query {
-      findAll: [Book]
+      findAll(query: String, filters: BookFilters, options: BookOptions): [Book]
       findBookById(id: ID!): Book
-      searchBooks(query: String!, options: BookOptions): [Book]
-      filterBooks(filters: BookFilters!, options: BookOptions): [Book]
       isBookAvailable(id: ID!): Boolean
       myBooks: [Book]
     }
@@ -92,9 +92,13 @@ export const typeDefs = `#graphql
 
 export const resolvers = {
   Query: {
-    findAll: async () => {
-      const books = await Book.findAll();
-      return books;
+    findAll: async (_, { query, filters, options }) => {
+      // Call the consolidated findAll method with all parameters
+      return await Book.findAll({
+        query,
+        filters,
+        ...(options || {}),
+      });
     },
     findBookById: async (_, { id }) => {
       const book = await Book.findBookById(id);
@@ -103,21 +107,14 @@ export const resolvers = {
       }
       return book;
     },
-    searchBooks: async (_, { query, options }) => {
-      const books = await Book.searchBooks(query, options);
-      return books;
-    },
-    filterBooks: async (_, { filters, options }) => {
-      const books = await Book.filterBooks(filters, options);
-      return books;
-    },
     isBookAvailable: async (_, { id }) => {
-      const isAvailable = await Book.isBookAvailable(id);
-      return isAvailable;
+      return await Book.isBookAvailable(id);
     },
     myBooks: requireAuth(async (_, __, { user }) => {
-      // Find all books uploaded by the authenticated user
-      return await Book.findBooksByUploaderId(user._id);
+      // Use the consolidated findAll method with uploaded_by filter
+      return await Book.findAll({
+        filters: { uploaded_by: user._id },
+      });
     }),
   },
   Mutation: {
@@ -169,8 +166,39 @@ export const resolvers = {
   },
   //resolver buat format uploaded_by
   Book: {
-    uploaded_by: (book) => {
-      return book.uploaded_by.toString();
+    //uplaoder idnya harus string terus
+    uploader_id: (book) => {
+      return typeof book.uploaded_by === "object"
+        ? book.uploaded_by.toString()
+        : book.uploaded_by;
+    },
+    uploaded_by: async (book) => {
+      try {
+        //objectId convert to string
+        const userId =
+          typeof book.uploaded_by === "object"
+            ? book.uploaded_by.toString()
+            : book.uploaded_by;
+
+        //GET user info
+        const user = await User.findUserById(userId);
+
+        if (!user) {
+          console.warn(`User with ID ${userId} not found for book ${book._id}`);
+          return null;
+        }
+
+        return {
+          _id: user._id.toString(),
+          name: user.name,
+          username: user.username,
+          phone_number: user.phone_number || "",
+          address: user.address || "",
+        };
+      } catch (error) {
+        console.error(`Error fetching user for book ${book._id}:`, error);
+        return null;
+      }
     },
   },
 };
