@@ -19,7 +19,16 @@ const ADD_BOOK_MUTATION = gql`
       image_urls
       status
       price
-      uploaded_by
+      uploader_id
+      uploaded_by {
+        _id
+        name
+        username
+        phone_number
+        address
+        created_at
+        updated_at
+      }
       created_at
       updated_at
     }
@@ -286,7 +295,6 @@ function AddBookPage() {
                     id="price"
                     name="price"
                     type="number"
-                    step="500"
                     min="0"
                     value={formData.price}
                     onChange={handleChange}

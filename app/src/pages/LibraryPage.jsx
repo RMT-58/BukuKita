@@ -1,6 +1,6 @@
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useQuery, gql } from "@apollo/client";
+import { useQuery, gql, useMutation } from "@apollo/client";
 import MyBookCard from "../components/MyBookCard";
 import RentalDetailsModal from "../components/RentalDetailsModal";
 
@@ -19,7 +19,16 @@ const GET_MY_BOOKS = gql`
       image_urls
       status
       price
-      uploaded_by
+      uploader_id
+      uploaded_by {
+        _id
+        name
+        username
+        phone_number
+        address
+        created_at
+        updated_at
+      }
       created_at
       updated_at
     }
@@ -60,11 +69,38 @@ const GET_MY_RENTALS = gql`
   }
 `;
 
+const UPDATE_BOOK = gql`
+  mutation UpdateBook($updateBookId: ID!, $input: UpdateBookInput!) {
+    updateBook(id: $updateBookId, input: $input) {
+      _id
+      title
+      author
+      genres
+      synopsis
+      cover_type
+      condition
+      condition_details
+      thumbnail_url
+      image_urls
+      status
+      price
+      uploader_id
+      uploaded_by {
+        username
+      }
+      created_at
+      updated_at
+    }
+  }
+`;
+
 const LibraryPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("active");
   const [selectedRental, setSelectedRental] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [updateBook] = useMutation(UPDATE_BOOK);
 
   const {
     loading: loadingBooks,
@@ -286,7 +322,11 @@ const LibraryPage = () => {
           <div className="space-y-4">
             {activeTab === "mybooks"
               ? filteredBooks.map((book) => (
-                  <MyBookCard key={book._id} book={book} />
+                  <MyBookCard
+                    key={book._id}
+                    book={book}
+                    onUpdateStatus={updateBook}
+                  />
                 ))
               : filteredRentals.map((rental) => (
                   <div

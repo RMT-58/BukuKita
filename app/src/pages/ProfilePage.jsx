@@ -33,7 +33,16 @@ const GET_MY_BOOKS = gql`
       image_urls
       status
       price
-      uploaded_by
+      uploader_id
+      uploaded_by {
+        _id
+        name
+        username
+        phone_number
+        address
+        created_at
+        updated_at
+      }
       created_at
       updated_at
     }

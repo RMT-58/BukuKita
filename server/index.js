@@ -119,6 +119,10 @@ export async function createApolloServer(options = {}) {
 
       return { user };
     },
+    cors: {
+      origin: "*",
+      credentials: true,
+    },
   });
 
   console.log(`🚀  Server ready at: ${url}`);
