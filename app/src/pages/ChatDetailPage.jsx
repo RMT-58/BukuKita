@@ -130,12 +130,13 @@
 //     </div>
 //   );
 // }
+
 "use client";
 
 import { ArrowLeft, Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { gql, useQuery } from "@apollo/client";
+import { gql, useQuery, useMutation } from "@apollo/client";
 import { io } from "socket.io-client";
 
 // GraphQL queries
@@ -147,6 +148,7 @@ const GET_CHAT_MESSAGES = gql`
       receiver_id
       message
       room_id
+      read
       created_at
       updated_at
       sender {
@@ -195,6 +197,12 @@ const GET_CURRENT_USER = gql`
   }
 `;
 
+const MARK_MESSAGES_READ = gql`
+  mutation MarkMessagesAsRead($roomId: String!) {
+    markMessagesAsRead(roomId: $roomId)
+  }
+`;
+
 export default function ChatDetailPage() {
   const { id: roomId } = useParams();
   const [newMessage, setNewMessage] = useState("");
@@ -223,11 +231,15 @@ export default function ChatDetailPage() {
     loading: messagesLoading,
     error: messagesError,
     data: messagesData,
+    refetch: refetchMessages,
   } = useQuery(GET_CHAT_MESSAGES, {
     variables: { roomId },
     skip: !roomId,
     fetchPolicy: "network-only",
   });
+
+  // Mutation to mark messages as read
+  const [markMessagesAsRead] = useMutation(MARK_MESSAGES_READ);
 
   // Set current user when data is available
   useEffect(() => {
@@ -254,8 +266,8 @@ export default function ChatDetailPage() {
     // Get token from localStorage
     const token = localStorage.getItem("access_token");
 
-    // Connect to Socket.IO server
-    socketRef.current = io("http://localhost:4001/");
+    // Connect to Socket.IO server (now on the same port as GraphQL)
+    socketRef.current = io("http://localhost:4000/");
 
     // Authenticate with token
     socketRef.current.emit("authenticate", token);
@@ -273,6 +285,15 @@ export default function ChatDetailPage() {
         if (exists) return prevMessages;
         return [...prevMessages, newMessage];
       });
+
+      // Mark messages as read if we're the receiver
+      if (currentUser && newMessage.receiver_id === currentUser._id) {
+        markMessagesAsRead({ variables: { roomId } });
+        socketRef.current.emit("mark_messages_read", {
+          roomId,
+          userId: currentUser._id,
+        });
+      }
     });
 
     // Cleanup on unmount
@@ -284,14 +305,23 @@ export default function ChatDetailPage() {
         socketRef.current.disconnect();
       }
     };
-  }, [roomId]);
+  }, [roomId, currentUser, markMessagesAsRead]);
 
   // Update messages when query data changes
   useEffect(() => {
     if (messagesData?.findChatsByRoomId) {
       setMessages(messagesData.findChatsByRoomId);
+
+      // Mark messages as read when viewing the chat
+      if (currentUser && roomId) {
+        markMessagesAsRead({ variables: { roomId } });
+        socketRef.current.emit("mark_messages_read", {
+          roomId,
+          userId: currentUser._id,
+        });
+      }
     }
-  }, [messagesData]);
+  }, [messagesData, currentUser, roomId, markMessagesAsRead]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -412,6 +442,9 @@ export default function ChatDetailPage() {
                 <p className="text-sm">{message.message}</p>
                 <p className="text-xs text-right mt-1 opacity-70">
                   {formatTimestamp(message.created_at)}
+                  {message.sender_id === currentUser?._id && (
+                    <span className="ml-2">{message.read ? "✓✓" : "✓"}</span>
+                  )}
                 </p>
               </div>
             </div>

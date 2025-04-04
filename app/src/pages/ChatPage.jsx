@@ -100,12 +100,13 @@
 //   );
 // };
 // export default ChatPage;
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
 import ChatItem from "../components/ChatItem";
 import { Search } from "lucide-react";
-import { gql, useQuery } from "@apollo/client";
+import { gql, useQuery, useMutation } from "@apollo/client";
 import { io } from "socket.io-client";
 
 // GraphQL queries
@@ -117,6 +118,7 @@ const GET_MY_ROOMS = gql`
       receiver_id
       created_at
       updated_at
+      unreadCount
       user {
         _id
         name
@@ -132,6 +134,7 @@ const GET_MY_ROOMS = gql`
         sender_id
         receiver_id
         message
+        read
         created_at
       }
     }
@@ -148,10 +151,17 @@ const GET_CURRENT_USER = gql`
   }
 `;
 
+const MARK_MESSAGES_READ = gql`
+  mutation MarkMessagesAsRead($roomId: String!) {
+    markMessagesAsRead(roomId: $roomId)
+  }
+`;
+
 const ChatPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [chatRooms, setChatRooms] = useState([]);
   const socketRef = useRef(null);
+  const [notificationSound] = useState(new Audio("/notification.mp3")); // Add a notification sound file to your public folder
 
   // Query to get current user
   const { data: userData } = useQuery(GET_CURRENT_USER);
@@ -161,13 +171,16 @@ const ChatPage = () => {
     fetchPolicy: "network-only",
   });
 
+  // Mutation to mark messages as read
+  const [markMessagesAsRead] = useMutation(MARK_MESSAGES_READ);
+
   // Initialize Socket.IO connection
   useEffect(() => {
     // Get token from localStorage
     const token = localStorage.getItem("access_token");
 
-    // Connect to Socket.IO server
-    socketRef.current = io("http://localhost:4001/");
+    // Connect to Socket.IO server (now on the same port as GraphQL)
+    socketRef.current = io("http://localhost:4000/");
 
     // Authenticate with token
     socketRef.current.emit("authenticate", token);
@@ -181,7 +194,23 @@ const ChatPage = () => {
     // Listen for message notifications
     socketRef.current.on("message_notification", (data) => {
       console.log("Received message notification:", data);
+
+      // Play notification sound
+      try {
+        notificationSound
+          .play()
+          .catch((e) => console.log("Error playing notification sound:", e));
+      } catch (e) {
+        console.log("Error playing notification sound:", e);
+      }
+
       // Refetch rooms to get the latest data
+      refetch();
+    });
+
+    // Listen for messages being marked as read
+    socketRef.current.on("messages_read", () => {
+      // Refetch rooms to update unread counts
       refetch();
     });
 
@@ -191,7 +220,7 @@ const ChatPage = () => {
         socketRef.current.disconnect();
       }
     };
-  }, [refetch]);
+  }, [refetch, notificationSound]);
 
   // Process chat rooms data
   useEffect(() => {
@@ -213,9 +242,8 @@ const ChatPage = () => {
         const chatPartner =
           room.user_id === currentUserId ? room.receiver : room.user;
 
-        // Count unread messages (this is a placeholder - implement your own logic)
-        // In a real app, you would track which messages have been read
-        const unreadCount = 0;
+        // Get unread count from the room data
+        const unreadCount = room.unreadCount || 0;
 
         return {
           id: room._id,

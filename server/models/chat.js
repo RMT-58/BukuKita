@@ -149,6 +149,7 @@ export default class Chat {
       receiver_id,
       message,
       room_id,
+      read: false, // Initialize as unread
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -182,6 +183,40 @@ export default class Chat {
     }
 
     return result.value;
+  }
+
+  static async markAsRead(roomId, userId) {
+    const collection = this.getCollection();
+
+    // Mark all messages in the room sent to this user as read
+    await collection.updateMany(
+      {
+        room_id: roomId,
+        receiver_id: userId,
+        read: false,
+      },
+      {
+        $set: {
+          read: true,
+          updated_at: new Date(),
+        },
+      }
+    );
+
+    return true;
+  }
+
+  static async countUnreadMessages(roomId, userId) {
+    const collection = this.getCollection();
+
+    // Count unread messages for this user in this room
+    const count = await collection.countDocuments({
+      room_id: roomId,
+      receiver_id: userId,
+      read: false,
+    });
+
+    return count;
   }
 
   static async deleteChat(id) {

@@ -134,9 +134,13 @@
 // if (isRunningDirectly) {
 //   createApolloServer();
 // }
-
 import { ApolloServer } from "@apollo/server";
-import { startStandaloneServer } from "@apollo/server/standalone";
+import { expressMiddleware } from "@apollo/server/express4";
+import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
+import express from "express";
+import http from "http";
+import cors from "cors";
+import { Server } from "socket.io";
 import {
   resolvers as bookResolvers,
   typeDefs as bookTypeDefs,
@@ -155,10 +159,6 @@ import {
 } from "./schemas/chatSchema.js";
 import { getUserFromToken } from "./utils/auth.js";
 import { fileURLToPath } from "url";
-import express from "express";
-import http from "http";
-import { Server } from "socket.io";
-import cors from "cors";
 import Chat from "./models/chat.js";
 import User from "./models/user.js";
 
@@ -176,15 +176,54 @@ const errorLoggingPlugin = {
 export async function createApolloServer(options = {}) {
   // Create Express app and HTTP server
   const app = express();
-  app.use(cors());
-
   const httpServer = http.createServer(app);
 
-  // Initialize Socket.IO
+  // Enable CORS for all routes
+  app.use(
+    cors({
+      origin: "*",
+      methods: ["GET", "POST", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    })
+  );
+
+  app.use(express.json());
+
+  // Create Apollo Server
+  const server = new ApolloServer({
+    typeDefs: [bookTypeDefs, userTypeDefs, rentalTypeDefs, chatTypeDefs],
+    resolvers: [bookResolvers, userResolvers, rentalResolvers, chatResolvers],
+    plugins: [
+      errorLoggingPlugin,
+      ApolloServerPluginDrainHttpServer({ httpServer }),
+    ],
+    formatError: (error) => {
+      console.error("GraphQL Error:", error);
+      return error;
+    },
+  });
+
+  // Start Apollo Server
+  await server.start();
+
+  // Set up middleware for the /graphql endpoint
+  app.use(
+    "/graphql",
+    expressMiddleware(server, {
+      context: async ({ req }) => {
+        const token = req.headers.authorization || "";
+        const user = await getUserFromToken(token);
+        return { user };
+      },
+    })
+  );
+
+  // Set up Socket.IO on the same server
   const io = new Server(httpServer, {
     cors: {
       origin: "*",
       methods: ["GET", "POST"],
+      allowedHeaders: ["Content-Type", "Authorization"],
     },
   });
 
@@ -244,9 +283,40 @@ export async function createApolloServer(options = {}) {
           },
         });
 
+        // Emit notification to receiver
+        io.to(`user:${receiver_id}`).emit("message_notification", {
+          room_id,
+          sender: {
+            _id: sender._id,
+            name: sender.name,
+            username: sender.username,
+          },
+          message,
+          created_at: newChat.created_at,
+        });
+
         console.log(`Message sent to room ${room_id}`);
       } catch (error) {
         console.error("Error sending message:", error);
+      }
+    });
+
+    // Handle marking messages as read
+    socket.on("mark_messages_read", async ({ roomId, userId }) => {
+      try {
+        await Chat.markAsRead(roomId, userId);
+
+        // Notify room that messages have been read
+        io.to(roomId).emit("messages_read", {
+          room_id: roomId,
+          user_id: userId,
+        });
+
+        console.log(
+          `Messages in room ${roomId} marked as read by user ${userId}`
+        );
+      } catch (error) {
+        console.error("Error marking messages as read:", error);
       }
     });
 
@@ -256,39 +326,21 @@ export async function createApolloServer(options = {}) {
     });
   });
 
-  const server = new ApolloServer({
-    typeDefs: [bookTypeDefs, userTypeDefs, rentalTypeDefs, chatTypeDefs],
-    resolvers: [bookResolvers, userResolvers, rentalResolvers, chatResolvers],
-    plugins: [errorLoggingPlugin],
-    formatError: (error) => {
-      console.error(error);
-      // Return the original error to preserve the message
-      return error;
-    },
+  // Add a simple route for the root path
+  app.get("/", (req, res) => {
+    res.send("BukuKita API Server. Use /graphql for GraphQL endpoint.");
   });
 
-  const { url } = await startStandaloneServer(server, {
-    listen: { port: options.port || 4000 },
-    context: async ({ req }) => {
-      //GET token from the Authorization header
-      const token = req.headers.authorization || "";
+  // Start the server
+  const PORT = process.env.PORT || 4000;
 
-      //GET user from token
-      const user = await getUserFromToken(token);
+  await new Promise((resolve) => httpServer.listen({ port: PORT }, resolve));
 
-      return { user };
-    },
-  });
+  console.log(`🚀 Server ready at http://localhost:${PORT}/`);
+  console.log(`📈 GraphQL endpoint: http://localhost:${PORT}/graphql`);
+  console.log(`🔌 Socket.IO running on the same port`);
 
-  console.log(`🚀 GraphQL Server ready at: ${url}`);
-
-  // Start Socket.IO server on a different port
-  const SOCKET_PORT = process.env.SOCKET_PORT || 4001;
-  httpServer.listen(SOCKET_PORT, () => {
-    console.log(`🔌 Socket.IO server running on port ${SOCKET_PORT}`);
-  });
-
-  return { server, url };
+  return { server, httpServer };
 }
 
 // Check if this file is being run directly

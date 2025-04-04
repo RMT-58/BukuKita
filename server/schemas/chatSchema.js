@@ -217,6 +217,7 @@ type Chat {
   receiver_id: String!
   message: String!
   room_id: String!
+  read: Boolean
   created_at: String!
   updated_at: String!
   sender: User
@@ -232,6 +233,7 @@ type Room {
   user: User
   receiver: User
   chats: [Chat]
+  unreadCount: Int
 }
 
 input CreateRoomInput {
@@ -248,6 +250,7 @@ input CreateChatInput {
 
 input UpdateChatInput {
   message: String
+  read: Boolean
 }
 
 type Query {
@@ -262,6 +265,7 @@ type Query {
   
   myRooms: [Room]
   myChats: [Chat]
+  countUnreadMessages(roomId: String!): Int
 }
 
 type Mutation {
@@ -273,6 +277,7 @@ type Mutation {
   deleteChat(id: ID!): String
   
   sendMessage(receiverId: String!, message: String!): Chat
+  markMessagesAsRead(roomId: String!): Boolean
 }
 `;
 
@@ -315,6 +320,9 @@ export const resolvers = {
         .toArray();
 
       return chats;
+    }),
+    countUnreadMessages: requireAuth(async (_, { roomId }, { user }) => {
+      return await Chat.countUnreadMessages(roomId, user._id.toString());
     }),
   },
   Mutation: {
@@ -396,6 +404,9 @@ export const resolvers = {
 
       return await Chat.createChat(chatInput);
     }),
+    markMessagesAsRead: requireAuth(async (_, { roomId }, { user }) => {
+      return await Chat.markAsRead(roomId, user._id.toString());
+    }),
   },
   Room: {
     user: async (parent) => {
@@ -407,6 +418,13 @@ export const resolvers = {
     },
     chats: async (parent) => {
       return await Chat.findChatsByRoomId(parent._id.toString());
+    },
+    unreadCount: async (parent, _, { user }) => {
+      if (!user) return 0;
+      return await Chat.countUnreadMessages(
+        parent._id.toString(),
+        user._id.toString()
+      );
     },
   },
   Chat: {
