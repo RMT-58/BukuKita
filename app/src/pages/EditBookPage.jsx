@@ -1,5 +1,5 @@
 import { ArrowLeft, Upload, Plus, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast, Toaster } from "react-hot-toast";
 import { gql, useMutation, useQuery } from "@apollo/client";
