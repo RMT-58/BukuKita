@@ -8,9 +8,72 @@ export default class Book {
     return db.collection("books");
   }
 
-  static async findAll() {
+  static async findAll(params = {}) {
     const collection = this.getCollection();
-    return await collection.find().toArray();
+    const {
+      query = "",
+      filters = {},
+      limit = 12,
+      skip = 0,
+      sort = { created_at: -1 },
+    } = params;
+
+    let queryObject = {};
+
+    //SEARCH CONDITION kalau ada query
+    if (query && query.trim() !== "") {
+      queryObject.$or = [
+        { title: { $regex: query, $options: "i" } },
+        { author: { $regex: query, $options: "i" } },
+        { genres: { $regex: query, $options: "i" } },
+      ];
+    }
+
+    //FILTER
+    if (filters.status) {
+      queryObject.status = filters.status;
+    }
+
+    if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+      queryObject.price = {};
+
+      if (filters.minPrice !== undefined) {
+        queryObject.price.$gte = filters.minPrice;
+      }
+
+      if (filters.maxPrice !== undefined) {
+        queryObject.price.$lte = filters.maxPrice;
+      }
+    }
+
+    if (filters.genres && filters.genres.length > 0) {
+      queryObject.genres = { $in: filters.genres };
+    }
+
+    if (filters.cover_type) {
+      queryObject.cover_type = filters.cover_type;
+    }
+
+    // ! gaperlu deh males
+    // if (filters.uploaded_by) {
+    //   const uploaded_by =
+    //     typeof filters.uploaded_by === "string" ? new ObjectId(filters.uploaded_by): filters.uploaded_by;
+    //   queryObject.uploaded_by = uploaded_by;
+    // }
+
+    //sorting
+    let sortOptions = sort;
+    if (params.sortField) {
+      sortOptions = { [params.sortField]: params.sortOrder || -1 };
+    }
+
+    //dah
+    return await collection
+      .find(queryObject)
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(limit)
+      .toArray();
   }
 
   static async findBookById(id) {
@@ -124,61 +187,6 @@ export default class Book {
     }
   }
 
-  //searching
-  static async searchBooks(query, options = {}) {
-    const collection = this.getCollection();
-    const { limit = 20, skip = 0, sort = { created_at: -1 } } = options;
-
-    const searchQuery = {
-      $or: [
-        { title: { $regex: query, $options: "i" } },
-        { author: { $regex: query, $options: "i" } },
-        { genres: { $regex: query, $options: "i" } },
-      ],
-    };
-
-    return await collection
-      .find(searchQuery)
-      .sort(sort)
-      .skip(skip)
-      .limit(limit)
-      .toArray();
-  }
-
-  static async filterBooks(filters, options = {}) {
-    const collection = this.getCollection();
-    const { limit = 20, skip = 0, sort = { created_at: -1 } } = options;
-
-    const query = {};
-
-    if (filters.status) {
-      query.status = filters.status;
-    }
-
-    if (filters.minPrice !== undefined) {
-      query.price = { $gte: filters.minPrice };
-    }
-
-    if (filters.maxPrice !== undefined) {
-      query.price = { ...query.price, $lte: filters.maxPrice };
-    }
-
-    if (filters.genres && filters.genres.length > 0) {
-      query.genres = { $in: filters.genres };
-    }
-
-    if (filters.cover_type) {
-      query.cover_type = filters.cover_type;
-    }
-
-    return await collection
-      .find(query)
-      .sort(sort)
-      .skip(skip)
-      .limit(limit)
-      .toArray();
-  }
-
   // cek bukunya available ga (apa udh dipinjem)
   static async isBookAvailable(id) {
     const currentDate = new Date();
@@ -186,12 +194,10 @@ export default class Book {
     return rentalDetails.length === 0;
   }
 
-  // Find books by uploader
+  // Find books by uploader - now uses the consolidated findAll method
   static async findBooksByUploaderId(uploaderId) {
-    const collection = this.getCollection();
-    const uploaded_by =
-      typeof uploaderId === "string" ? new ObjectId(uploaderId) : uploaderId;
-
-    return await collection.find({ uploaded_by }).toArray();
+    return await this.findAll({
+      filters: { uploaded_by: uploaderId },
+    });
   }
 }
