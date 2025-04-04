@@ -9,6 +9,7 @@ import {
   InMemoryCache,
 } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
+import { AppProvider } from "./context/AppContext.jsx";
 
 const httpLink = createHttpLink({
   uri: "http://localhost:4000/",
@@ -34,8 +35,10 @@ const client = new ApolloClient({
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <ApolloProvider client={client}>
-      <App />
-    </ApolloProvider>
+    <AppProvider>
+      <ApolloProvider client={client}>
+        <App />
+      </ApolloProvider>
+    </AppProvider>
   </StrictMode>
 );
