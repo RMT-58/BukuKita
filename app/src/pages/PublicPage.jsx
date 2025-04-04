@@ -33,6 +33,9 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { useNavigate } from "react-router";
+import mobile1 from "../assets/appMobile1.png";
+import mobile2 from "../assets/appMobile2.png";
+import { toast, Toaster } from "react-hot-toast";
 
 // Initialize GSAP
 if (typeof window !== "undefined") {
@@ -124,10 +127,6 @@ const PublicPage = () => {
 
     //  animation typing text
     const typeText = gsap.timeline({
-      scrollTrigger: {
-        trigger: ".typing-text",
-        start: "top 70%",
-      },
       repeat: -1,
       repeatDelay: 1,
     });
@@ -208,8 +207,20 @@ const PublicPage = () => {
     },
   ];
 
+  const showToastCommingSoon = () => {
+    toast("🚀 Coming Soon!", {
+      duration: 3000,
+      position: "top-center",
+      style: {
+        background: "#333",
+        color: "#fff",
+      },
+    });
+  };
+
   return (
     <div className="bg-white font-sans">
+      <Toaster />
       <section
         ref={headerRef}
         className="pt-32 pb-20 bg-gradient-to-br from-blue-50 via-white to-indigo-50"
@@ -229,7 +240,7 @@ const PublicPage = () => {
                   onClick={() => navigate("/login")}
                   className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition shadow-md hover:shadow-lg"
                 >
-                  Login First To Browse Books
+                  Browse Books
                 </button>
                 <a
                   href="#features"
@@ -716,11 +727,17 @@ const PublicPage = () => {
                 reads on the go. Available for iOS and Android.
               </p>
               <div className="flex space-x-4">
-                <button className="bg-black text-white px-6 py-3 rounded-lg flex items-center hover:bg-gray-900 transition">
+                <button
+                  onClick={showToastCommingSoon}
+                  className="bg-black text-white px-6 py-3 rounded-lg flex items-center hover:bg-gray-900 transition"
+                >
                   <BookOpen className="h-6 w-6 mr-2" />
                   App Store
                 </button>
-                <button className="bg-black text-white px-6 py-3 rounded-lg flex items-center hover:bg-gray-900 transition">
+                <button
+                  onClick={showToastCommingSoon}
+                  className="bg-black text-white px-6 py-3 rounded-lg flex items-center hover:bg-gray-900 transition"
+                >
                   <Share2 className="h-6 w-6 mr-2" />
                   Google Play
                 </button>
@@ -730,7 +747,7 @@ const PublicPage = () => {
               <div className="relative">
                 <div className="w-64 h-auto transform rotate-12 rounded-3xl overflow-hidden shadow-2xl">
                   <img
-                    src="/placeholder.svg?height=580&width=290"
+                    src={mobile2}
                     alt="BukuKita mobile app"
                     width={290}
                     height={580}
@@ -739,7 +756,7 @@ const PublicPage = () => {
                 </div>
                 <div className="w-64 h-auto transform -rotate-6 absolute -left-20 top-10 rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
                   <img
-                    src="/placeholder.svg?height=580&width=290"
+                    src={mobile1}
                     alt="BukuKita mobile app"
                     width={290}
                     height={580}
@@ -765,13 +782,13 @@ const PublicPage = () => {
             </p>
             <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
               <button
-                onClick={() => navigation("/signup")}
+                onClick={() => navigation("/register")}
                 className="px-8 py-4 bg-blue-600 text-white text-lg font-medium rounded-lg hover:bg-blue-700 transition shadow-lg hover:shadow-xl"
               >
                 Sign Up Now - It's Free!
               </button>
               <button
-                onClick={() => navigation("/browse")}
+                onClick={() => navigation("/login")}
                 className="px-8 py-4 border-2 border-blue-600 text-blue-600 text-lg font-medium rounded-lg hover:bg-blue-50 transition"
               >
                 Browse Books First

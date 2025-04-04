@@ -1,12 +1,43 @@
 import { ArrowLeft, Upload, Plus, X } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { toast, Toaster } from "react-hot-toast";
-import { gql, useMutation } from "@apollo/client";
+import { gql, useMutation, useQuery } from "@apollo/client";
 
-const ADD_BOOK_MUTATION = gql`
-  mutation AddBook($input: AddBookInput!) {
-    addBook(input: $input) {
+const FIND_BOOK_BY_ID = gql`
+  query FindBookById($findBookByIdId: ID!) {
+    findBookById(id: $findBookByIdId) {
+      _id
+      title
+      author
+      genres
+      synopsis
+      cover_type
+      condition
+      condition_details
+      thumbnail_url
+      image_urls
+      status
+      price
+      uploader_id
+      uploaded_by {
+        _id
+        name
+        username
+        phone_number
+        address
+        created_at
+        updated_at
+      }
+      created_at
+      updated_at
+    }
+  }
+`;
+
+const UPDATE_BOOK_MUTATION = gql`
+  mutation UpdateBook($updateBookId: ID!, $input: UpdateBookInput!) {
+    updateBook(id: $updateBookId, input: $input) {
       _id
       title
       author
@@ -37,7 +68,7 @@ const ADD_BOOK_MUTATION = gql`
 
 const coverTypes = ["Hardcover", "Paperback"];
 const conditions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-const statusOptions = ["forRent", "isClosed"];
+const statusOptions = ["For Rent", "Closed"];
 const genreOptions = [
   "Fiction",
   "Non-Fiction",
@@ -61,8 +92,9 @@ const genreOptions = [
   "Science",
 ];
 
-function AddBookPage() {
+function EditBookPage() {
   const navigate = useNavigate();
+  const { id } = useParams();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -72,28 +104,68 @@ function AddBookPage() {
     cover_type: "",
     condition: 0,
     condition_details: "",
-    status: "forRent",
+    status: "",
     genres: [],
   });
 
   const [errorMessage, setErrorMessage] = useState("");
-
-  const [addBook, { loading }] = useMutation(ADD_BOOK_MUTATION, {
-    onCompleted: () => {
-      toast.success("Adding book successful! Redirecting...");
-      navigate("/library");
-    },
-    onError: (error) => {
-      setErrorMessage(error.message || "Registration failed!");
-      toast.error(error.message || "Registration failed!");
-      console.log(error);
-    },
-  });
-
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState(null);
   const [additionalImages, setAdditionalImages] = useState([]);
   const [additionalPreviews, setAdditionalPreviews] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
+
+  // Fetch book data
+  const { loading: fetchLoading, error: fetchError } = useQuery(
+    FIND_BOOK_BY_ID,
+    {
+      variables: { findBookByIdId: id },
+      onCompleted: (data) => {
+        const book = data.findBookById;
+
+        setFormData({
+          title: book.title || "",
+          author: book.author || "",
+          synopsis: book.synopsis || "",
+          price: book.price ? book.price.toString() : "",
+          cover_type: book.cover_type || "",
+          condition: book.condition || 0,
+          condition_details: book.condition_details || "",
+          status: book.status || "",
+          genres: Array.isArray(book.genres) ? book.genres : [],
+        });
+
+        if (book.thumbnail_url) {
+          setThumbnailPreview(book.thumbnail_url);
+        }
+
+        if (Array.isArray(book.image_urls) && book.image_urls.length > 0) {
+          setExistingImages(book.image_urls);
+          setAdditionalPreviews(book.image_urls);
+        }
+      },
+      onError: (error) => {
+        setErrorMessage("Failed to fetch book details. Please try again.");
+        toast.error("Failed to fetch book details.");
+        console.error("Error fetching book:", error);
+      },
+    }
+  );
+
+  const [updateBook, { loading: updateLoading }] = useMutation(
+    UPDATE_BOOK_MUTATION,
+    {
+      onCompleted: () => {
+        toast.success("Book updated successfully! Redirecting...");
+        navigate("/library");
+      },
+      onError: (error) => {
+        setErrorMessage(error.message || "Update failed!");
+        toast.error(error.message || "Update failed!");
+        console.error(error);
+      },
+    }
+  );
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -134,14 +206,20 @@ function AddBookPage() {
   };
 
   const removeAdditionalImage = (index) => {
-    setAdditionalImages((prev) => prev.filter((_, i) => i !== index));
+    // If it's an existing image
+    if (index < existingImages.length) {
+      setExistingImages((prev) => prev.filter((_, i) => i !== index));
+    } else {
+      // Adjust index for newly added images
+      const newIndex = index - existingImages.length;
+      setAdditionalImages((prev) => prev.filter((_, i) => i !== newIndex));
+    }
+
     setAdditionalPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Function untuk upload image dan dapat url nanti pakai cloudinary
+  // Function for image upload (placeholder)
   const uploadImages = async () => {
-    //ini masih placeholder
-
     try {
       // mock upload function
       const mockUpload = async (file) => {
@@ -152,9 +230,15 @@ function AddBookPage() {
       let thumbnailUrl = "";
       if (thumbnailFile) {
         thumbnailUrl = await mockUpload(thumbnailFile);
+      } else if (thumbnailPreview && thumbnailPreview.startsWith("http")) {
+        // Keep the existing thumbnail URL
+        thumbnailUrl = thumbnailPreview;
       }
 
-      const imageUrls = [];
+      // Start with existing images that haven't been removed
+      const imageUrls = [...existingImages];
+
+      // Add newly uploaded images
       for (const file of additionalImages) {
         const url = await mockUpload(file);
         imageUrls.push(url);
@@ -170,27 +254,60 @@ function AddBookPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log("Form data:", formData);
     try {
       const { thumbnailUrl, imageUrls } = await uploadImages();
 
       const input = {
-        ...formData,
+        title: formData.title,
+        author: formData.author,
+        synopsis: formData.synopsis,
         condition: parseInt(formData.condition),
+        condition_details: formData.condition_details,
+        cover_type: formData.cover_type,
         price: parseFloat(formData.price) || 0,
-        thumbnail_url: thumbnailUrl,
-        image_urls: imageUrls,
+        status: formData.status,
+        genres: formData.genres,
       };
 
-      await addBook({ variables: { input } });
+      // Only add image fields if they've changed
+      if (thumbnailUrl) {
+        input.thumbnail_url = thumbnailUrl;
+      }
+
+      if (imageUrls.length > 0) {
+        input.image_urls = imageUrls;
+      }
+
+      await updateBook({
+        variables: {
+          updateBookId: id,
+          input,
+        },
+      });
     } catch (err) {
-      console.error("Error adding book:", err);
-      setErrorMessage("Failed to add book. Please try again.");
-      toast.error("Failed to add book. Please try again.");
+      console.error("Error updating book:", err);
+      setErrorMessage("Failed to update book. Please try again.");
+      toast.error("Failed to update book. Please try again.");
     }
   };
 
   const handleBack = () => navigate(-1);
+
+  if (fetchLoading)
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <div className="w-16 h-16 border-4 border-t-blue-500 border-b-blue-500 rounded-full animate-spin"></div>
+      </div>
+    );
+
+  if (fetchError)
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-xl text-red-600">
+          Error loading book details. Please try again.
+        </div>
+      </div>
+    );
 
   return (
     <div className="pb-20">
@@ -199,7 +316,7 @@ function AddBookPage() {
         <button onClick={handleBack} className="mr-4">
           <ArrowLeft size={20} />
         </button>
-        <h1 className="text-xl font-bold">Add a Book</h1>
+        <h1 className="text-xl font-bold">Edit Book</h1>
       </header>
 
       <div className="max-w-3xl mx-auto p-4">
@@ -218,7 +335,7 @@ function AddBookPage() {
               <div className="relative w-40 h-56 bg-gray-100 rounded-md overflow-hidden border-2 border-dashed border-gray-300 flex flex-col items-center justify-center">
                 {thumbnailPreview ? (
                   <img
-                    src={thumbnailPreview || "/placeholder.svg"}
+                    src={thumbnailPreview}
                     alt="Cover preview"
                     className="absolute inset-0 w-full h-full object-cover"
                   />
@@ -389,7 +506,7 @@ function AddBookPage() {
                 className="w-full p-2 border border-gray-300 rounded-md"
               >
                 {statusOptions.map((status) => (
-                  <option key={status} value={status.toLowerCase()}>
+                  <option key={status} value={status}>
                     {status}
                   </option>
                 ))}
@@ -446,7 +563,7 @@ function AddBookPage() {
                   className="relative h-32 bg-gray-100 rounded-md overflow-hidden"
                 >
                   <img
-                    src={preview || "/placeholder.svg"}
+                    src={preview}
                     alt={`Preview ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
@@ -473,19 +590,29 @@ function AddBookPage() {
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full bg-[#00A8FF] hover:bg-[#0096e0] text-white py-3 rounded-md font-medium ${
-              loading ? "opacity-70 cursor-not-allowed" : ""
-            }`}
-          >
-            {loading ? "Adding Book..." : "Add Book"}
-          </button>
+          <div className="flex justify-between gap-4">
+            <button
+              type="button"
+              onClick={handleBack}
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 rounded-md font-medium"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              disabled={updateLoading}
+              className={`flex-1 bg-[#00A8FF] hover:bg-[#0096e0] text-white py-3 rounded-md font-medium ${
+                updateLoading ? "opacity-70 cursor-not-allowed" : ""
+              }`}
+            >
+              {updateLoading ? "Updating..." : "Save Changes"}
+            </button>
+          </div>
         </form>
       </div>
     </div>
   );
 }
 
-export default AddBookPage;
+export default EditBookPage;

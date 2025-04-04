@@ -24,7 +24,7 @@ const Navbar = () => {
 
   return (
     <>
-      {/* Mobile Bottom Navigation */}
+      {/* ketika di mobile dia di bawah seperti navigasi */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 md:hidden z-10">
         <div className="flex justify-around items-center">
           <Link
@@ -78,7 +78,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Desktop Top Navigation */}
+      {/* ketika di desktop dia diatas */}
       <div className="hidden md:block fixed top-0 left-0 right-0 bg-white border-b border-gray-200 py-3 px-6 z-10">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <Link
@@ -138,7 +138,6 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Spacer for desktop top navigation */}
       <div className="hidden md:block h-16"></div>
     </>
   );

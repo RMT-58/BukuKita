@@ -1,156 +1,210 @@
-import { Star } from "lucide-react";
-import React from "react";
+import { Edit, ExternalLink, Image } from "lucide-react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { formatCreatedAtDate, formatUnixTimestamp } from "../utils/formatDate";
+import { formatUnixTimestamp } from "../utils/formatDate";
+import BookPhotosModal from "./BookPhotosModal";
 
-const MyBookCard = ({ book }) => {
+const MyBookCard = ({ book, onUpdateStatus }) => {
   const navigate = useNavigate();
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
 
   const handleEdit = () => {
     navigate(`/edit-book/${book._id}`);
   };
 
-  const rating = 4;
+  const handleToggleStatus = async () => {
+    try {
+      setIsUpdating(true);
+      const newStatus = book.status === "forRent" ? "isClosed" : "forRent";
+
+      await onUpdateStatus({
+        variables: {
+          updateBookId: book._id,
+          input: {
+            status: newStatus,
+          },
+        },
+      });
+    } catch (error) {
+      console.error("Failed to update book status:", error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const openPhotoModal = (e) => {
+    e.preventDefault();
+    setIsPhotoModalOpen(true);
+  };
 
   const genres = Array.isArray(book.genres) ? book.genres : [];
-
-  console.log(book.created_at);
+  const photos = Array.isArray(book.image_urls) ? book.image_urls : [];
 
   return (
-    <div className="bg-white rounded-md overflow-hidden shadow-sm">
-      <div className="p-4">
-        <div className="flex">
-          <div className="relative w-20 h-28 bg-gray-100 rounded-md overflow-hidden">
-            <img
-              src={book.thumbnail_url || "/placeholder.svg"}
-              alt={book.title}
-              className="object-cover w-full h-full"
-            />
-          </div>
-
-          <div className="ml-4 flex-1">
-            <div className="flex justify-between items-start">
-              <Link
-                to={`/book/${book._id}`}
-                className="text-blue-500 font-medium hover:underline"
-              >
-                {book.title}
-              </Link>
-              <div className="text-gray-500 text-sm">
-                {formatUnixTimestamp(book.created_at)}
-              </div>
+    <>
+      <div className="bg-white rounded-md overflow-hidden shadow-sm">
+        <div className="p-4">
+          <div className="flex">
+            <div className="relative w-20 h-28 bg-gray-100 rounded-md overflow-hidden">
+              <img
+                src={book.thumbnail_url || "/placeholder.svg"}
+                alt={book.title}
+                className="object-cover w-full h-full"
+              />
             </div>
 
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm">{book.author}</p>
-                <p className="text-sm font-medium mt-1">{book.cover_type}</p>
-                <p className="text-sm">Condition: {book.condition}/10</p>
-                {book.condition_details && (
-                  <div className="text-blue-500 text-xs hover:underline">
-                    {book.condition_details}
+            <div className="ml-4 flex-1">
+              <div className="flex justify-between items-start">
+                <Link
+                  to={`/book/${book._id}`}
+                  className="text-[#00A8FF] font-medium hover:underline"
+                >
+                  {book.title}
+                </Link>
+                <div className="text-gray-500 text-sm">
+                  {formatUnixTimestamp(book.created_at)}
+                </div>
+              </div>
+
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm">{book.author}</p>
+                  <p className="text-sm font-medium mt-1">{book.cover_type}</p>
+                  <p className="text-sm">
+                    Condition: {book.condition}/10
+                    {book.condition_details && (
+                      <Link
+                        to={`/book/${book._id}`}
+                        className="ml-1 text-[#00A8FF] text-xs hover:underline"
+                        title={book.condition_details}
+                      >
+                        View further explanation
+                      </Link>
+                    )}
+                  </p>
+                </div>
+
+                <div className="text-right">
+                  <p className="text-sm">{book.uploaded_by.username}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-sm font-medium">
+                      <span
+                        className={`${
+                          book.status === "forRent"
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {book.status === "forRent"
+                          ? "Available"
+                          : "Not Available"}
+                      </span>
+                    </span>
+                    <button
+                      onClick={handleToggleStatus}
+                      disabled={isUpdating}
+                      className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#00A8FF] focus:ring-offset-1 ${
+                        book.status === "forRent"
+                          ? "bg-green-500"
+                          : "bg-gray-300"
+                      }`}
+                      aria-label={`Toggle availability to ${
+                        book.status === "forRent"
+                          ? "not available"
+                          : "available"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                          book.status === "forRent"
+                            ? "translate-x-6"
+                            : "translate-x-1"
+                        } ${isUpdating ? "opacity-50" : ""}`}
+                      />
+                    </button>
                   </div>
-                )}
+                </div>
+              </div>
+
+              {photos.length > 0 && (
+                <div className="mt-2">
+                  <button
+                    onClick={openPhotoModal}
+                    className="text-[#00A8FF] text-xs hover:underline flex items-center"
+                  >
+                    <Image size={14} className="mr-1" />
+                    View photos ({photos.length})
+                  </button>
+                </div>
+              )}
+
+              {genres.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {genres.slice(0, 3).map((genre, index) => (
+                    <span
+                      key={index}
+                      className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded"
+                    >
+                      {genre}
+                    </span>
+                  ))}
+                  {genres.length > 3 && (
+                    <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">
+                      +{genres.length - 3}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-4 border-t pt-3">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm text-gray-500">Status</p>
+                <p className="text-sm">
+                  {book.status === "forRent"
+                    ? "Available for rent"
+                    : "Not available"}
+                </p>
               </div>
 
               <div className="text-right">
-                <p className="text-sm font-medium">{book.status}</p>
-                <div className="flex text-yellow-400 mt-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      size={14}
-                      fill={i < Math.floor(rating) ? "currentColor" : "none"}
-                      className={i < Math.floor(rating) ? "" : "text-gray-300"}
-                    />
-                  ))}
-                </div>
+                <p className="text-sm text-gray-500">For rent</p>
+                <p className="text-sm font-medium">
+                  Rp. {book.price ? book.price.toLocaleString() : "0"} per day
+                </p>
               </div>
             </div>
 
-            <div className="mt-2">
-              {book.image_urls && book.image_urls.length > 0 && (
-                <Link
-                  to={`/book/${book._id}/photos`}
-                  className="text-blue-500 text-xs hover:underline"
-                >
-                  View photos ({book.image_urls.length})
-                </Link>
-              )}
-            </div>
-
-            <div className="flex flex-wrap gap-2 mt-2">
-              {genres.slice(0, 3).map((genre, index) => (
-                <span
-                  key={index}
-                  className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded"
-                >
-                  {genre}
-                </span>
-              ))}
-              {genres.length > 3 && (
-                <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">
-                  +{genres.length - 3}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4 border-t pt-3">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-sm text-gray-500">Uploaded on</p>
-              <p className="text-sm">{formatUnixTimestamp(book.created_at)}</p>
-            </div>
-
-            <div className="text-right">
-              <p className="text-sm text-gray-500">Price</p>
-              <p className="text-sm font-medium">
-                Rp. {book.price ? book.price.toLocaleString() : "0"} per day
-              </p>
-            </div>
-          </div>
-
-          <div className="flex mt-3 gap-2">
-            <button
-              onClick={handleEdit}
-              className="w-12 h-12 border border-blue-500 text-blue-500 rounded flex items-center justify-center"
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+            <div className="flex mt-3 gap-2">
+              <button
+                onClick={handleEdit}
+                className="w-12 h-12 border border-[#00A8FF] text-[#00A8FF] rounded flex items-center justify-center"
+                aria-label="Edit book"
               >
-                <path
-                  d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M18.5 2.50001C18.8978 2.10219 19.4374 1.87869 20 1.87869C20.5626 1.87869 21.1022 2.10219 21.5 2.50001C21.8978 2.89784 22.1213 3.4374 22.1213 4.00001C22.1213 4.56262 21.8978 5.10219 21.5 5.50001L12 15L8 16L9 12L18.5 2.50001Z"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
+                <Edit size={18} />
+              </button>
 
-            <Link
-              to={`/book/${book._id}`}
-              className="flex-1 bg-blue-500 text-white rounded flex items-center justify-center py-2"
-            >
-              View Details
-            </Link>
+              <Link
+                to={`/book/${book._id}`}
+                className="flex-1 bg-[#00A8FF] text-white rounded flex items-center justify-center py-2"
+              >
+                <span className="font-medium">View Details</span>
+                <ExternalLink size={16} className="ml-1" />
+              </Link>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      <BookPhotosModal
+        isOpen={isPhotoModalOpen}
+        onClose={() => setIsPhotoModalOpen(false)}
+        photos={photos}
+      />
+    </>
   );
 };
 
