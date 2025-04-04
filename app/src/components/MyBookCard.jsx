@@ -1,6 +1,6 @@
 "use client";
 
-import { Edit, ExternalLink } from "lucide-react";
+import { Edit, ExternalLink, Star } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { formatUnixTimestamp } from "../utils/formatDate";
@@ -36,128 +36,112 @@ const MyBookCard = ({ book, onUpdateStatus }) => {
   const genres = Array.isArray(book.genres) ? book.genres : [];
 
   return (
-    <div className="bg-white rounded-lg overflow-hidden shadow-md border border-gray-100 hover:shadow-lg transition-shadow duration-300">
-      <div className="p-5">
-        <div className="flex flex-col sm:flex-row gap-4">
-          {/* Book Cover */}
-          <div className="relative w-full sm:w-24 h-40 sm:h-36 bg-gray-50 rounded-md overflow-hidden flex-shrink-0">
+    <div className="bg-white rounded-md overflow-hidden shadow-sm">
+      <div className="p-4">
+        <div className="flex">
+          {/* Book Cover - Always on the left */}
+          <div className="relative w-20 h-28 bg-gray-100 rounded-md overflow-hidden">
             <img
-              src={
-                book.thumbnail_url || "/placeholder.svg?height=160&width=120"
-              }
+              src={book.thumbnail_url || "/placeholder.svg"}
               alt={book.title}
               className="object-cover w-full h-full"
             />
           </div>
 
-          {/* Book Details */}
-          <div className="flex-1 flex flex-col">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
-              <div>
-                <Link
-                  to={`/book/${book._id}`}
-                  className="text-lg font-semibold text-gray-800 hover:text-blue-600 transition-colors line-clamp-2"
-                >
-                  {book.title}
-                </Link>
-                <p className="text-gray-600 mt-1">{book.author}</p>
-              </div>
+          {/* Book Details - Always on the right */}
+          <div className="ml-4 flex-1">
+            <div className="flex justify-between items-start">
+              <Link
+                to={`/book/${book._id}`}
+                className="text-[#00A8FF] font-medium hover:underline"
+              >
+                {book.title}
+              </Link>
               <div className="text-gray-500 text-sm">
                 {formatUnixTimestamp(book.created_at)}
               </div>
             </div>
 
-            <div className="mt-2 flex flex-col sm:flex-row sm:justify-between gap-3">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Cover:</span>
-                  <span className="text-sm font-medium">{book.cover_type}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Condition:</span>
-                  <div className="flex items-center">
-                    <span className="text-sm font-medium">
-                      {book.condition}/10
-                    </span>
-                    {book.condition_details && (
-                      <span
-                        className="ml-1 text-primary text-xs cursor-help hover:underline"
-                        title={book.condition_details}
-                      >
-                        (details)
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Uploader:</span>
-                  <span className="text-sm font-medium">
-                    {book.uploaded_by.username}
-                  </span>
-                </div>
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm">{book.author}</p>
+                <p className="text-sm font-medium mt-1">{book.cover_type}</p>
+                <p className="text-sm">
+                  Condition: {book.condition}/10
+                  {book.condition_details && (
+                    <Link
+                      href="#"
+                      className="ml-1 text-[#00A8FF] text-xs hover:underline"
+                      title={book.condition_details}
+                    >
+                      View further explanation
+                    </Link>
+                  )}
+                </p>
               </div>
 
-              <div className="flex flex-col items-start sm:items-end gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Status:</span>
-                  <div className="flex items-center gap-2">
+              <div className="text-right">
+                <p className="text-sm">{book.uploaded_by.username}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-sm font-medium">
                     <span
-                      className={`text-sm font-medium ${book.status === "forRent" ? "text-green-600" : "text-red-600"}`}
+                      className={`${
+                        book.status === "forRent"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
                     >
                       {book.status === "forRent"
                         ? "Available"
                         : "Not Available"}
                     </span>
-                    <button
-                      onClick={handleToggleStatus}
-                      disabled={isUpdating}
-                      className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 ${
-                        book.status === "forRent"
-                          ? "bg-green-500"
-                          : "bg-gray-300"
-                      }`}
-                      aria-label={`Toggle availability to ${book.status === "forRent" ? "not available" : "available"}`}
-                    >
-                      <span
-                        className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                          book.status === "forRent"
-                            ? "translate-x-6"
-                            : "translate-x-1"
-                        } ${isUpdating ? "opacity-50" : ""}`}
-                      />
-                    </button>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Price:</span>
-                  <span className="text-sm font-semibold text-gray-800">
-                    Rp. {book.price ? book.price.toLocaleString() : "0"}/day
                   </span>
-                </div>
-                {book.image_urls && book.image_urls.length > 0 && (
-                  <Link
-                    to={`/book/${book._id}/photos`}
-                    className="text-primary text-xs hover:underline mt-1"
+                  <button
+                    onClick={handleToggleStatus}
+                    disabled={isUpdating}
+                    className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#00A8FF] focus:ring-offset-1 ${
+                      book.status === "forRent" ? "bg-green-500" : "bg-gray-300"
+                    }`}
+                    aria-label={`Toggle availability to ${
+                      book.status === "forRent" ? "not available" : "available"
+                    }`}
                   >
-                    View all photos ({book.image_urls.length})
-                  </Link>
-                )}
+                    <span
+                      className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                        book.status === "forRent"
+                          ? "translate-x-6"
+                          : "translate-x-1"
+                      } ${isUpdating ? "opacity-50" : ""}`}
+                    />
+                  </button>
+                </div>
               </div>
             </div>
 
+            {book.image_urls && book.image_urls.length > 0 && (
+              <div className="mt-2">
+                <Link
+                  to={`/book/${book._id}/photos`}
+                  className="text-[#00A8FF] text-xs hover:underline"
+                >
+                  View photos ({book.image_urls.length})
+                </Link>
+              </div>
+            )}
+
             {/* Genres */}
             {genres.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-3">
+              <div className="flex flex-wrap gap-2 mt-2">
                 {genres.slice(0, 3).map((genre, index) => (
                   <span
                     key={index}
-                    className="bg-blue-50 text-primary text-xs px-2 py-0.5 rounded-full"
+                    className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded"
                   >
                     {genre}
                   </span>
                 ))}
                 {genres.length > 3 && (
-                  <span className="bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">
+                  <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">
                     +{genres.length - 3}
                   </span>
                 )}
@@ -167,22 +151,40 @@ const MyBookCard = ({ book, onUpdateStatus }) => {
         </div>
 
         {/* Actions */}
-        <div className="mt-4 pt-4 border-t border-gray-100">
-          <div className="flex gap-3">
+        <div className="mt-4 border-t pt-3">
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-sm text-gray-500">Status</p>
+              <p className="text-sm">
+                {book.status === "forRent"
+                  ? "Available for rent"
+                  : "Not available"}
+              </p>
+            </div>
+
+            <div className="text-right">
+              <p className="text-sm text-gray-500">For rent</p>
+              <p className="text-sm font-medium">
+                Rp. {book.price ? book.price.toLocaleString() : "0"} per day
+              </p>
+            </div>
+          </div>
+
+          <div className="flex mt-3 gap-2">
             <button
               onClick={handleEdit}
-              className="flex items-center justify-center gap-1.5 px-4 py-2 border border-primary text-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+              className="w-12 h-12 border border-[#00A8FF] text-[#00A8FF] rounded flex items-center justify-center"
               aria-label="Edit book"
             >
-              <Edit size={16} />
-              <span className="text-sm font-medium">Edit</span>
+              <Edit size={18} />
             </button>
+
             <Link
               to={`/book/${book._id}`}
-              className="flex-1 flex items-center justify-center gap-1.5 bg-primary text-white rounded-md py-2 hover:bg-blue-700 transition-colors"
+              className="flex-1 bg-[#00A8FF] text-white rounded flex items-center justify-center py-2"
             >
               <span className="font-medium">View Details</span>
-              <ExternalLink size={16} />
+              <ExternalLink size={16} className="ml-1" />
             </Link>
           </div>
         </div>
