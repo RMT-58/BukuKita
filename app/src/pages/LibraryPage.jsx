@@ -94,6 +94,12 @@ const UPDATE_BOOK = gql`
   }
 `;
 
+const DELETE_BOOK = gql`
+  mutation DeleteBook($deleteBookId: ID!) {
+    deleteBook(id: $deleteBookId)
+  }
+`;
+
 const LibraryPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("active");
@@ -101,6 +107,7 @@ const LibraryPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [updateBook] = useMutation(UPDATE_BOOK);
+  const [deleteBook] = useMutation(DELETE_BOOK);
 
   const {
     loading: loadingBooks,
@@ -127,6 +134,11 @@ const LibraryPage = () => {
       refetchRentals();
     }
   }, [activeTab, refetchBooks, refetchRentals]);
+
+  const handleDeleteSuccess = () => {
+    // Refetch books list after successful deletion
+    refetchBooks();
+  };
 
   const currentDate = useMemo(() => {
     const date = new Date();
@@ -324,6 +336,8 @@ const LibraryPage = () => {
                     key={book._id}
                     book={book}
                     onUpdateStatus={updateBook}
+                    onDeleteStatus={deleteBook}
+                    onDeleteSuccess={handleDeleteSuccess}
                   />
                 ))
               : filteredRentals.map((rental) => (
