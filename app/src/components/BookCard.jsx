@@ -1,6 +1,7 @@
-import { Star } from "lucide-react";
+import { Image, Star } from "lucide-react";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router";
+import BookPhotosModal from "./BookPhotosModal";
 
 const BookCard = ({ book, isHome }) => {
   const handleAddToCart = () => {
@@ -65,26 +66,38 @@ const BookCard = ({ book, isHome }) => {
               <div className="text-right">
                 <p className="text-sm">{book.uploaded_by?.name || "Unknown"}</p>
                 <div className="flex text-yellow-400 mt-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      size={14}
-                      fill={i < 4 ? "currentColor" : "none"}
-                      className={i < 4 ? "" : "text-gray-300"}
-                    />
-                  ))}
+                  {[...Array(5)].map((_, i) => {
+                    const rating = book.condition || 0;
+
+                    let filledStars = 0;
+                    if (rating <= 2) filledStars = 1;
+                    else if (rating <= 4) filledStars = 2;
+                    else if (rating <= 6) filledStars = 3;
+                    else if (rating <= 8) filledStars = 4;
+                    else filledStars = 5;
+
+                    return (
+                      <Star
+                        key={i}
+                        size={14}
+                        fill={i < filledStars ? "currentColor" : "none"}
+                        className={i < filledStars ? "" : "text-gray-300"}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             </div>
 
-            {book.image_urls && book.image_urls.length > 0 && (
+            {photos.length > 0 && (
               <div className="mt-2">
-                <Link
-                  href="#"
-                  className="text-[#00A8FF] text-xs hover:underline"
+                <button
+                  onClick={openPhotoModal}
+                  className="text-[#00A8FF] text-xs hover:underline flex items-center"
                 >
-                  View photos
-                </Link>
+                  <Image size={14} className="mr-1" />
+                  View photos ({photos.length})
+                </button>
               </div>
             )}
 
@@ -162,6 +175,12 @@ const BookCard = ({ book, isHome }) => {
           </div>
         </div>
       </div>
+
+      <BookPhotosModal
+        isOpen={isPhotoModalOpen}
+        onClose={() => setIsPhotoModalOpen(false)}
+        photos={photos}
+      />
     </div>
   );
 };
