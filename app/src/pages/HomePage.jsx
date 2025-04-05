@@ -661,6 +661,7 @@ const HomePage = () => {
         setError(error.message);
         setLoading(false);
       },
+      fetchPolicy: "no-cache",
     });
 
   // pakai use effect untuk debounce kalau ada perubahan
