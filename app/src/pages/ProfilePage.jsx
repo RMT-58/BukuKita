@@ -90,7 +90,7 @@ const ProfilePage = () => {
     loading: loadingProfile,
     error: errorProfile,
     data: profileData,
-  } = useQuery(GET_PROFILE);
+  } = useQuery(GET_PROFILE, { fetchPolicy: "no-cache" });
 
   const {
     loading: loadingBooks,
