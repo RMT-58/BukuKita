@@ -25,7 +25,7 @@ const Navbar = () => {
   return (
     <>
       {/* ketika di mobile dia di bawah seperti navigasi */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 md:hidden z-10">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 sm:hidden z-10">
         <div className="flex justify-around items-center">
           <Link
             to="/"
@@ -79,7 +79,7 @@ const Navbar = () => {
       </div>
 
       {/* ketika di desktop dia diatas */}
-      <div className="hidden md:block fixed top-0 left-0 right-0 bg-white border-b border-gray-200 py-3 px-6 z-10">
+      <div className="hidden sm:block fixed top-0 left-0 right-0 bg-white border-b border-gray-200 py-3 px-6 z-10">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <Link
             to="/"

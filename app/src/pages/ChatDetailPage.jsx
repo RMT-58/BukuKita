@@ -404,7 +404,8 @@ export default function ChatDetailPage() {
 
   return (
     <div className="flex flex-col h-screen">
-      <header className="bg-white p-4 border-b flex items-center">
+      {/* HEADER */}
+      <header className="fixed top-0 sm:top-14 left-0 right-0 bg-white p-4 border-y flex items-center z-10">
         <button
           onClick={() => navigate(-1)}
           className="mr-4 border-none bg-transparent cursor-pointer p-1"
@@ -425,7 +426,8 @@ export default function ChatDetailPage() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-8 md:p-12 bg-gray-50">
+      {/* bodynya */}
+      <div className="flex-1 overflow-y-auto pt-20 pb-24 mt-8 mb-5 p-8 md:p-12 bg-gray-50">
         <div className="space-y-4">
           {messages.map((message) => (
             <div
@@ -452,7 +454,9 @@ export default function ChatDetailPage() {
           <div ref={messagesEndRef} />
         </div>
       </div>
-      <div className="bg-white border-t p-2 sm:p-3 fixed sm:bottom-0 bottom-16 left-0 right-0 w-full">
+
+      {/* input barnya fixed */}
+      <div className="fixed bottom-16 sm:bottom-0 left-0 right-0 bg-white border-t p-2 sm:p-3 z-10">
         <form onSubmit={handleSendMessage} className="flex items-center">
           <input
             type="text"
