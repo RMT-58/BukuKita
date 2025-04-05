@@ -33,6 +33,18 @@ export const typeDefs = `#graphql
       updated_at: String!
     }
 
+    type PaginationInfo {
+      totalCount: Int!
+      totalPages: Int!
+      currentPage: Int!
+      limit: Int!
+    }
+
+    type BookPaginationResult {
+      data: [Book!]!
+      pagination: PaginationInfo!
+    }
+
     input AddBookInput {
       title: String!
       author: String!
@@ -77,7 +89,7 @@ export const typeDefs = `#graphql
     }
 
     type Query {
-      findAll(query: String, filters: BookFilters, options: BookOptions): [Book]
+      findAll(query: String, filters: BookFilters, options: BookOptions): BookPaginationResult!
       findBookById(id: ID!): Book
       isBookAvailable(id: ID!): Boolean
       myBooks: [Book]
@@ -111,10 +123,10 @@ export const resolvers = {
       return await Book.isBookAvailable(id);
     },
     myBooks: requireAuth(async (_, __, { user }) => {
-      // Use the consolidated findAll method with uploaded_by filter
-      return await Book.findAll({
+      const result = await Book.findAll({
         filters: { uploaded_by: user._id },
       });
+      return result.data;
     }),
   },
   Mutation: {

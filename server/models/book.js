@@ -16,11 +16,13 @@ export default class Book {
       limit = 12,
       skip = 0,
       sort = { created_at: -1 },
+      sortField,
+      sortOrder,
     } = params;
 
     let queryObject = {};
 
-    //SEARCH CONDITION kalau ada query
+    // SEARCH CONDITION
     if (query && query.trim() !== "") {
       queryObject.$or = [
         { title: { $regex: query, $options: "i" } },
@@ -29,18 +31,16 @@ export default class Book {
       ];
     }
 
-    //FILTER
+    // FILTERS
     if (filters.status) {
       queryObject.status = filters.status;
     }
 
     if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
       queryObject.price = {};
-
       if (filters.minPrice !== undefined) {
         queryObject.price.$gte = filters.minPrice;
       }
-
       if (filters.maxPrice !== undefined) {
         queryObject.price.$lte = filters.maxPrice;
       }
@@ -54,7 +54,6 @@ export default class Book {
       queryObject.cover_type = filters.cover_type;
     }
 
-    // astaga punten
     if (filters.uploaded_by) {
       const uploaded_by =
         typeof filters.uploaded_by === "string"
@@ -63,19 +62,34 @@ export default class Book {
       queryObject.uploaded_by = uploaded_by;
     }
 
-    //sorting
+    // SORT
     let sortOptions = sort;
-    if (params.sortField) {
-      sortOptions = { [params.sortField]: params.sortOrder || -1 };
+    if (sortField) {
+      sortOptions = { [sortField]: sortOrder || -1 };
     }
 
-    //dah
-    return await collection
+    // PAGINATION
+    const totalCount = await collection.countDocuments(queryObject);
+    const totalPages = Math.ceil(totalCount / limit);
+    const currentPage = Math.floor(skip / limit) + 1;
+
+    // RESULT
+    const data = await collection
       .find(queryObject)
       .sort(sortOptions)
       .skip(skip)
       .limit(limit)
       .toArray();
+
+    return {
+      data,
+      pagination: {
+        totalCount,
+        totalPages,
+        currentPage,
+        limit,
+      },
+    };
   }
 
   static async findBookById(id) {

@@ -1,5 +1,5 @@
 import { Star } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router";
 
 const BookCard = ({ book, isHome }) => {
@@ -7,15 +7,23 @@ const BookCard = ({ book, isHome }) => {
     console.log("handle add to cart");
   };
 
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const navigate = useNavigate();
 
+  const openPhotoModal = (e) => {
+    e.preventDefault();
+    setIsPhotoModalOpen(true);
+  };
+
+  const photos = Array.isArray(book.image_urls) ? book.image_urls : [];
+
   return (
-    <div className="bg-white rounded-md overflow-hidden shadow-sm">
+    <div className="bg-white rounded-md overflow-hidden shadow-sm mb-4">
       <div className="p-4">
         <div className="flex">
           <div className="relative w-20 h-28 bg-gray-100 rounded-md overflow-hidden">
             <img
-              src={book.coverImage || "/placeholder.svg"}
+              src={book.thumbnail_url || "/placeholder.svg"}
               alt={book.title}
               fill
               className="object-cover"
@@ -25,64 +33,74 @@ const BookCard = ({ book, isHome }) => {
           <div className="ml-4 flex-1">
             <div className="flex justify-between items-start">
               <Link
-                to={`/book/${book.id}`}
+                to={`/book/${book._id}`}
                 className="text-[#00A8FF] font-medium hover:underline"
               >
                 {book.title}
               </Link>
-              <div className="text-gray-500 text-sm">{book.distance}</div>
+              {book.uploaded_by && (
+                <div className="text-gray-500 text-sm">
+                  {book.uploaded_by.address}
+                </div>
+              )}
             </div>
-
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-sm">{book.author}</p>
-                <p className="text-sm font-medium mt-1">{book.format}</p>
-                <p className="text-sm">Condition: {book.condition}</p>
-                <Link
-                  href="#"
-                  className="text-[#00A8FF] text-xs hover:underline"
-                >
-                  View further explanation
-                </Link>
+                <p className="text-sm font-medium mt-1">{book.cover_type}</p>
+                <p className="text-sm">
+                  Condition: {book.condition}/10
+                  {book.condition_details && (
+                    <Link
+                      to={`/book/${book._id}`}
+                      className="ml-1 text-[#00A8FF] text-xs hover:underline"
+                      title={book.condition_details}
+                    >
+                      View further explanation
+                    </Link>
+                  )}
+                </p>
               </div>
 
               <div className="text-right">
-                <p className="text-sm">{book.owner}</p>
+                <p className="text-sm">{book.uploaded_by?.name || "Unknown"}</p>
                 <div className="flex text-yellow-400 mt-1">
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
                       size={14}
-                      fill={
-                        i < Math.floor(book.rating) ? "currentColor" : "none"
-                      }
-                      className={
-                        i < Math.floor(book.rating) ? "" : "text-gray-300"
-                      }
+                      fill={i < 4 ? "currentColor" : "none"}
+                      className={i < 4 ? "" : "text-gray-300"}
                     />
                   ))}
                 </div>
               </div>
             </div>
 
-            <div className="mt-2">
-              <Link href="#" className="text-[#00A8FF] text-xs hover:underline">
-                View photos
-              </Link>
-            </div>
+            {book.image_urls && book.image_urls.length > 0 && (
+              <div className="mt-2">
+                <Link
+                  href="#"
+                  className="text-[#00A8FF] text-xs hover:underline"
+                >
+                  View photos
+                </Link>
+              </div>
+            )}
 
             <div className="flex flex-wrap gap-2 mt-2">
-              {book.categories.map((category, index) => (
-                <span
-                  key={index}
-                  className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded"
-                >
-                  {category}
-                </span>
-              ))}
-              {book.categories.length > 0 && (
+              {book.genres &&
+                book.genres.map((genre, index) => (
+                  <span
+                    key={index}
+                    className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded"
+                  >
+                    {genre}
+                  </span>
+                ))}
+              {book.genres && book.genres.length > 3 && (
                 <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">
-                  +1
+                  +{book.genres.length - 3}
                 </span>
               )}
             </div>
@@ -92,21 +110,21 @@ const BookCard = ({ book, isHome }) => {
         <div className="mt-4 border-t pt-3">
           <div className="flex justify-between items-center">
             <div>
-              <p className="text-sm text-gray-500">Available for</p>
-              <p className="text-sm">{book.availablePeriod}</p>
+              <p className="text-sm text-gray-500">Status</p>
+              <p className="text-sm capitalize">{book.status || "Available"}</p>
             </div>
 
             <div className="text-right">
               <p className="text-sm text-gray-500">For rent</p>
               <p className="text-sm font-medium">
-                {book.currency} {book.price.toLocaleString()} per day
+                Rp {book.price?.toLocaleString() || 0} per day
               </p>
             </div>
           </div>
 
           <div className="flex mt-3 gap-2">
             <button
-              onClick={() => navigate(`/chat/${book.id}`)}
+              onClick={() => navigate(`/chat/${book._id}`)}
               className="w-12 h-12 border border-[#00A8FF] text-[#00A8FF] rounded flex items-center justify-center"
             >
               <svg
@@ -135,7 +153,7 @@ const BookCard = ({ book, isHome }) => {
               </button>
             ) : (
               <Link
-                to={`/book/${book.id}`}
+                to={`/book/${book._id}`}
                 className="flex-1 bg-[#00A8FF] text-white rounded flex items-center justify-center py-2"
               >
                 View Details
