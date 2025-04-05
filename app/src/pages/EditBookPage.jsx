@@ -1,8 +1,28 @@
 import { ArrowLeft, Upload, Plus, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast, Toaster } from "react-hot-toast";
 import { gql, useMutation, useQuery } from "@apollo/client";
+
+const GET_IMAGEKIT_AUTH_PARAMS = gql`
+  mutation GetImageKitAuthParams {
+    getImageKitAuthParams {
+      token
+      expire
+      signature
+    }
+  }
+`;
+
+const UPLOAD_IMAGE_MUTATION = gql`
+  mutation UploadImage($input: ImageUploadInput!) {
+    uploadImage(input: $input) {
+      url
+      fileId
+      name
+    }
+  }
+`;
 
 const FIND_BOOK_BY_ID = gql`
   query FindBookById($findBookByIdId: ID!) {
@@ -115,6 +135,23 @@ function EditBookPage() {
   const [additionalPreviews, setAdditionalPreviews] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
 
+  //state untuk imagekit auth
+  const [imageKitAuth, setImageKitAuth] = useState(null);
+
+  // imageKit params mutation
+  const [getImageKitAuthParams] = useMutation(GET_IMAGEKIT_AUTH_PARAMS, {
+    onCompleted: (data) => {
+      setImageKitAuth(data.getImageKitAuthParams);
+    },
+    onError: (error) => {
+      console.error("Error getting ImageKit auth params:", error);
+      toast.error("Failed to initialize image upload");
+    },
+  });
+
+  // mutation untuk upload image
+  const [uploadImage] = useMutation(UPLOAD_IMAGE_MUTATION);
+
   // Fetch book data
   const { loading: fetchLoading, error: fetchError } = useQuery(
     FIND_BOOK_BY_ID,
@@ -167,6 +204,11 @@ function EditBookPage() {
     }
   );
 
+  // mengambil imageKit auth
+  useEffect(() => {
+    getImageKitAuthParams();
+  }, [getImageKitAuthParams]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -206,11 +248,11 @@ function EditBookPage() {
   };
 
   const removeAdditionalImage = (index) => {
-    // If it's an existing image
+    // kalau masih ada image
     if (index < existingImages.length) {
       setExistingImages((prev) => prev.filter((_, i) => i !== index));
     } else {
-      // Adjust index for newly added images
+      // kalau ada image yang dihapus
       const newIndex = index - existingImages.length;
       setAdditionalImages((prev) => prev.filter((_, i) => i !== newIndex));
     }
@@ -218,44 +260,104 @@ function EditBookPage() {
     setAdditionalPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Function for image upload (placeholder)
-  const uploadImages = async () => {
-    try {
-      // mock upload function
-      const mockUpload = async (file) => {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        return `https://your-upload-service.com/${file.name}`;
-      };
+  // untuk covert file ke base64
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+  };
 
+  // upload image via imagekit
+  const uploadImages = async () => {
+    if (!imageKitAuth) {
+      throw new Error("Image upload not initialized");
+    }
+
+    try {
+      // upload thumbnail kalau baru
       let thumbnailUrl = "";
       if (thumbnailFile) {
-        thumbnailUrl = await mockUpload(thumbnailFile);
+        const base64Thumbnail = await fileToBase64(thumbnailFile);
+        const fileName = `thumbnail_${Date.now()}_${thumbnailFile.name}`;
+
+        const { data } = await uploadImage({
+          variables: {
+            input: {
+              file: base64Thumbnail,
+              fileName,
+              folder: "books/thumbnails",
+            },
+          },
+        });
+
+        thumbnailUrl = data.uploadImage.url;
       } else if (thumbnailPreview && thumbnailPreview.startsWith("http")) {
-        // Keep the existing thumbnail URL
+        // kalau masih thumbnail yang lama tetap
         thumbnailUrl = thumbnailPreview;
       }
 
-      // Start with existing images that haven't been removed
-      const imageUrls = [...existingImages];
+      // mulai dari image yang belum di remove
+      let imageUrls = [];
 
-      // Add newly uploaded images
+      // tambah image yang masih ada di image tambahan
+      existingImages.forEach((url, index) => {
+        if (additionalPreviews.includes(url)) {
+          imageUrls.push(url);
+        }
+      });
+
+      // upload image tambahan abru
       for (const file of additionalImages) {
-        const url = await mockUpload(file);
-        imageUrls.push(url);
+        const base64Image = await fileToBase64(file);
+        const fileName = `image_${Date.now()}_${file.name}`;
+
+        const { data } = await uploadImage({
+          variables: {
+            input: {
+              file: base64Image,
+              fileName,
+              folder: "books/images",
+            },
+          },
+        });
+
+        imageUrls.push(data.uploadImage.url);
       }
 
       return { thumbnailUrl, imageUrls };
     } catch (error) {
       console.error("Error uploading images:", error);
-      throw new Error("Failed to upload images");
+      throw new Error("Failed to upload images: " + error.message);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!formData.title || !formData.author) {
+      setErrorMessage("Title and author are required!");
+      toast.error("Title and author are required!");
+      return;
+    }
+
+    // kalau tidak ada thumbnail, maka error
+    if (!thumbnailFile && !thumbnailPreview) {
+      setErrorMessage("Please upload a thumbnail image");
+      toast.error("Please upload a thumbnail image");
+      return;
+    }
+
+    let loadingToast;
     try {
+      loadingToast = toast.loading("Uploading images...");
+
       const { thumbnailUrl, imageUrls } = await uploadImages();
+
+      toast.dismiss(loadingToast);
+      loadingToast = toast.loading("Updating book...");
 
       const input = {
         title: formData.title,
@@ -269,7 +371,7 @@ function EditBookPage() {
         genres: formData.genres,
       };
 
-      // Only add image fields if they've changed
+      // add image kalau ganti atau tambah saja
       if (thumbnailUrl) {
         input.thumbnail_url = thumbnailUrl;
       }
@@ -284,10 +386,15 @@ function EditBookPage() {
           input,
         },
       });
+
+      toast.dismiss(loadingToast);
+      toast.success("Book updated successfully! Redirecting...");
+      navigate("/library");
     } catch (err) {
       console.error("Error updating book:", err);
-      setErrorMessage("Failed to update book. Please try again.");
-      toast.error("Failed to update book. Please try again.");
+      setErrorMessage("Failed to update book: " + err.message);
+      toast.error("Failed to update book: " + err.message);
+      if (loadingToast) toast.dismiss(loadingToast);
     }
   };
 

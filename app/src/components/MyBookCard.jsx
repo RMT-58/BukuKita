@@ -1,13 +1,20 @@
-import { Edit, ExternalLink, Image } from "lucide-react";
+import { Edit, ExternalLink, Image, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { formatUnixTimestamp } from "../utils/formatDate";
 import BookPhotosModal from "./BookPhotosModal";
 
-const MyBookCard = ({ book, onUpdateStatus }) => {
+const MyBookCard = ({
+  book,
+  onUpdateStatus,
+  onDeleteStatus,
+  onDeleteSuccess,
+}) => {
   const navigate = useNavigate();
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleEdit = () => {
     navigate(`/edit-book/${book._id}`);
@@ -31,6 +38,33 @@ const MyBookCard = ({ book, onUpdateStatus }) => {
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      setIsDeleting(true);
+      await onDeleteStatus({
+        variables: {
+          deleteBookId: book._id,
+        },
+      });
+      if (onDeleteSuccess) {
+        onDeleteSuccess();
+      }
+    } catch (error) {
+      console.error("Failed to delete book:", error);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false);
   };
 
   const openPhotoModal = (e) => {
@@ -187,6 +221,15 @@ const MyBookCard = ({ book, onUpdateStatus }) => {
                 <Edit size={18} />
               </button>
 
+              <button
+                onClick={handleDeleteClick}
+                className="w-12 h-12 border border-red-500 text-red-500 rounded flex items-center justify-center"
+                aria-label="Delete book"
+                disabled={isDeleting}
+              >
+                <Trash2 size={18} className={isDeleting ? "opacity-50" : ""} />
+              </button>
+
               <Link
                 to={`/book/${book._id}`}
                 className="flex-1 bg-[#00A8FF] text-white rounded flex items-center justify-center py-2"
@@ -198,6 +241,35 @@ const MyBookCard = ({ book, onUpdateStatus }) => {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm mx-4 w-full">
+            <h3 className="text-lg font-medium mb-4">Delete Book</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete "{book.title}"? This action cannot
+              be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={handleDeleteCancel}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <BookPhotosModal
         isOpen={isPhotoModalOpen}
