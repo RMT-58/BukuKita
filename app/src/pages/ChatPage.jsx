@@ -6,7 +6,6 @@ import { Search } from "lucide-react";
 import { gql, useQuery, useMutation } from "@apollo/client";
 import { io } from "socket.io-client";
 
-// GraphQL queries
 const GET_MY_ROOMS = gql`
   query GetMyRooms {
     myRooms {
@@ -58,7 +57,7 @@ const ChatPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [chatRooms, setChatRooms] = useState([]);
   const socketRef = useRef(null);
-  const [notificationSound] = useState(new Audio("/notification.mp3")); // Add a notification sound file to your public folder
+  const [notificationSound] = useState(new Audio("/notification.mp3"));
 
   // Query to get current user
   const { data: userData } = useQuery(GET_CURRENT_USER, {
@@ -69,9 +68,6 @@ const ChatPage = () => {
   const { loading, error, data, refetch } = useQuery(GET_MY_ROOMS, {
     fetchPolicy: "network-only",
   });
-
-  // Mutation to mark messages as read
-  const [markMessagesAsRead] = useMutation(MARK_MESSAGES_READ);
 
   // Initialize Socket.IO connection
   useEffect(() => {

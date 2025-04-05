@@ -2,6 +2,65 @@ import { Image, Star } from "lucide-react";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import BookPhotosModal from "./BookPhotosModal";
+import { gql, useQuery, useMutation, useLazyQuery } from "@apollo/client";
+import { toast, Toaster } from "react-hot-toast";
+
+const GET_CURRENT_USER = gql`
+  query Me {
+    me {
+      _id
+      name
+      username
+      phone_number
+      address
+      created_at
+      updated_at
+    }
+  }
+`;
+
+const FIND_ROOMS_BY_USER_ID = gql`
+  query FindRoomsByUserId($userId: String!) {
+    findRoomsByUserId(userId: $userId) {
+      _id
+      user_id
+      receiver_id
+    }
+  }
+`;
+
+const SEND_MESSAGE = gql`
+  mutation SendMessage($message: String!, $receiverId: String!) {
+    sendMessage(message: $message, receiverId: $receiverId) {
+      _id
+      sender_id
+      receiver_id
+      message
+      room_id
+      read
+      created_at
+      updated_at
+      sender {
+        _id
+        name
+        username
+        phone_number
+        address
+        created_at
+        updated_at
+      }
+      receiver {
+        _id
+        name
+        username
+        phone_number
+        address
+        created_at
+        updated_at
+      }
+    }
+  }
+`;
 
 const BookCard = ({ book, isHome }) => {
   const handleAddToCart = () => {
@@ -10,6 +69,82 @@ const BookCard = ({ book, isHome }) => {
 
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const navigate = useNavigate();
+
+  // ambil user yang login
+  const { data: userData } = useQuery(GET_CURRENT_USER, {
+    fetchPolicy: "no-cache",
+  });
+
+  const [findRooms, { data: roomsData }] = useLazyQuery(FIND_ROOMS_BY_USER_ID, {
+    fetchPolicy: "network-only",
+  });
+
+  const [sendMessage] = useMutation(SEND_MESSAGE);
+
+  const handleChatOwner = async () => {
+    try {
+      // buku harus punya uploaded_by dan user sudah login
+      if (!book.uploaded_by || !book.uploaded_by._id) {
+        console.error("Book uploader information is missing");
+        toast.error("Book uploader information is missing");
+        return;
+      }
+
+      if (!userData || !userData.me || !userData.me._id) {
+        // jika belum login, redirect ke halaman login
+        navigate("/login");
+        return;
+      }
+
+      const currentUserId = userData.me._id;
+      const uploaderId = book.uploaded_by._id;
+
+      // tidak boleh chat dengan diri sendiri
+      if (currentUserId === uploaderId) {
+        console.log("Cannot chat with yourself");
+        toast.error("Cannot chat with yourself");
+        return;
+      }
+
+      // temukan room dari user
+      const { data: roomsData } = await findRooms({
+        variables: { userId: currentUserId },
+      });
+
+      // Check kalau udah ada room simpan di existing Room
+      let existingRoom = null;
+      if (roomsData && roomsData.findRoomsByUserId) {
+        existingRoom = roomsData.findRoomsByUserId.find(
+          (room) =>
+            room.user_id === uploaderId || room.receiver_id === uploaderId
+        );
+      }
+
+      if (existingRoom) {
+        // kalau room ada buat chat
+        navigate(`/chats/${existingRoom._id}`);
+      } else {
+        // kalau belumm ada room, buat room baru dan kirim pesan
+        const initialMessage = `Hi, I'm interested in your book "${book.title}". Is it still available?`;
+
+        const { data } = await sendMessage({
+          variables: {
+            message: initialMessage,
+            receiverId: uploaderId,
+          },
+        });
+
+        // Navigate ke room yang baru dibuat
+        if (data && data.sendMessage && data.sendMessage.room_id) {
+          navigate(`/chats/${data.sendMessage.room_id}`);
+        } else {
+          console.error("Failed to create chat room");
+        }
+      }
+    } catch (error) {
+      console.error("Error in chat handling:", error);
+    }
+  };
 
   const openPhotoModal = (e) => {
     e.preventDefault();
@@ -20,6 +155,7 @@ const BookCard = ({ book, isHome }) => {
 
   return (
     <div className="bg-white rounded-md overflow-hidden shadow-sm mb-4">
+      <Toaster />
       <div className="p-4">
         <div className="flex">
           <div className="relative w-20 h-28 bg-gray-100 rounded-md overflow-hidden">
@@ -137,7 +273,7 @@ const BookCard = ({ book, isHome }) => {
 
           <div className="flex mt-3 gap-2">
             <button
-              onClick={() => navigate(`/chat/${book._id}`)}
+              onClick={handleChatOwner}
               className="w-12 h-12 border border-[#00A8FF] text-[#00A8FF] rounded flex items-center justify-center"
             >
               <svg
