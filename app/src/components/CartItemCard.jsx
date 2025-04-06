@@ -1,115 +1,125 @@
-import { Minus, Plus, Trash2 } from "lucide-react";
-import React, { useState } from "react";
-import { Link } from "react-router";
+import React from "react";
+import { Trash2, Minus, Plus, Calendar } from "lucide-react";
+import { useCartStore } from "../store/CartStore";
+import { toast } from "react-hot-toast";
 
-const CartItemCard = ({ item, onUpdate, onRemove }) => {
-  const [rentalDays, setRentalDays] = useState(item.quantity || 1);
-  const [isEditing, setIsEditing] = useState(false);
+const CartItemCard = ({ item }) => {
+  const removeFromCart = useCartStore((state) => state.removeFromCart);
+  const updatePeriod = useCartStore((state) => state.updatePeriod);
+  const updateStartDate = useCartStore((state) => state.updateStartDate);
 
-  const perDayPrice = item.price;
-  const totalPrice = perDayPrice * rentalDays;
-
-  const handleDaysChange = (newDays) => {
-    const updatedDays = Math.max(1, newDays);
-    setRentalDays(updatedDays);
-    onUpdate(item.id, updatedDays);
+  const handleRemove = () => {
+    removeFromCart(item._id);
+    toast.success("Item removed from cart");
   };
 
-  const handleManualInput = (e) => {
-    const value = e.target.value;
-    const parsedValue = value === "" ? 1 : Math.max(1, parseInt(value, 10));
-    setRentalDays(parsedValue);
-    onUpdate(item.id, parsedValue);
-    setIsEditing(false);
+  const today = new Date().toISOString().split("T")[0];
+
+  // maksimal pinjam 3 bulan
+  const maxDate = new Date();
+  maxDate.setMonth(maxDate.getMonth() + 3);
+  const maxDateString = maxDate.toISOString().split("T")[0];
+
+  const handleDateChange = (e) => {
+    updateStartDate(item._id, e.target.value);
+    toast.success("Rental start date updated");
+  };
+
+  const calculateEndDate = () => {
+    if (!item.startDate) return "";
+    const startDate = new Date(item.startDate);
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + item.period);
+    return endDate.toISOString().split("T")[0];
   };
 
   return (
-    <div key={item.id} className="bg-white rounded-md shadow-sm mb-4">
-      <div className="p-4">
-        <div className="flex">
-          <div className="relative w-20 h-28 bg-gray-100 rounded-md overflow-hidden">
-            <img
-              src={item.coverImage}
-              alt={item.title}
-              className="object-cover w-full h-full"
-            />
+    <div className="bg-white rounded-md shadow-sm p-4 mb-4">
+      <div className="flex">
+        <img
+          src={item.thumbnail_url || item.coverImage}
+          alt={item.title}
+          className="w-20 h-28 object-cover rounded mr-4"
+        />
+        <div className="flex-1">
+          <div className="flex justify-between">
+            <div>
+              <h3 className="font-semibold">{item.title}</h3>
+              <p className="text-sm text-gray-500">{item.author}</p>
+            </div>
+            <button
+              onClick={handleRemove}
+              className="text-gray-400 hover:text-red-500"
+            >
+              <Trash2 size={18} />
+            </button>
           </div>
 
-          <div className="ml-4 flex-1">
-            <div className="flex justify-between items-start">
-              <Link
-                to={`/book/${item.id}`}
-                className="text-[#00A8FF] font-medium hover:underline"
-              >
-                {item.title}
-              </Link>
+          <div className="mt-2 flex flex-col space-y-1">
+            <p className="text-xs text-gray-500">
+              Format:{" "}
+              <span className="text-gray-700">
+                {item.cover_type || item.format}
+              </span>
+            </p>
+            <p className="text-xs text-gray-500">
+              Condition: <span className="text-gray-700">{item.condition}</span>
+            </p>
+            <p className="text-xs text-gray-500">
+              Period:{" "}
+              <span className="text-gray-700">
+                {item.availablePeriod || `${item.period} days`}
+              </span>
+            </p>
+          </div>
+
+          <div className="mt-2 flex flex-col space-y-1">
+            <div className="flex items-center space-x-2">
+              <Calendar size={14} className="text-gray-500" />
+              <p className="text-xs text-gray-500">Rental Period:</p>
+            </div>
+            <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-4 sm:space-y-0 text-xs">
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-500">Start:</span>
+                <input
+                  type="date"
+                  value={item.startDate || today}
+                  min={today}
+                  max={maxDateString}
+                  onChange={handleDateChange}
+                  className="border rounded px-2 py-1 text-xs"
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-500">End:</span>
+                <span className="border rounded px-2 py-1 bg-gray-50">
+                  {calculateEndDate()}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 flex justify-between items-center">
+            <div className="flex items-center border rounded-full overflow-hidden">
               <button
-                onClick={() => onRemove(item.id)}
-                className="text-red-500 hover:bg-red-50 rounded-full p-1"
+                onClick={() => updatePeriod(item._id, item.period - 1)}
+                className="px-2 py-1 bg-gray-100"
+                disabled={item.period <= 1}
               >
-                <Trash2 size={18} />
+                <Minus size={16} />
+              </button>
+              <span className="px-3">{item.period}</span>
+              <button
+                onClick={() => updatePeriod(item._id, item.period + 1)}
+                className="px-2 py-1 bg-gray-100"
+              >
+                <Plus size={16} />
               </button>
             </div>
-
-            <div className="mt-2">
-              <p className="text-sm">{item.author}</p>
-              <p className="text-sm font-medium">{item.format}</p>
-              <p className="text-sm">Condition: {item.condition}</p>
-            </div>
-
-            <div className="mt-2">
-              <p className="text-sm text-gray-500">Rent Period</p>
-              <p className="text-sm">{item.availablePeriod}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4 border-t pt-3 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => handleDaysChange(rentalDays - 1)}
-              className="bg-gray-100 rounded-full p-1"
-            >
-              <Minus size={16} />
-            </button>
-            {isEditing ? (
-              <input
-                type="number"
-                min="1"
-                value={rentalDays}
-                onChange={(e) =>
-                  setRentalDays(Math.max(1, parseInt(e.target.value, 10)))
-                }
-                onBlur={handleManualInput}
-                onKeyDown={(e) => e.key === "Enter" && handleManualInput(e)}
-                className="w-12 text-center border rounded px-1"
-                autoFocus
-              />
-            ) : (
-              <span
-                className="px-3 cursor-pointer"
-                onClick={() => setIsEditing(true)}
-              >
-                {rentalDays} {rentalDays === 1 ? "Day" : "Days"}
-              </span>
-            )}
-            <button
-              onClick={() => handleDaysChange(rentalDays + 1)}
-              className="bg-gray-100 rounded-full p-1"
-            >
-              <Plus size={16} />
-            </button>
-          </div>
-          <div className="text-right">
-            <div className="flex flex-col">
-              <p className="text-sm text-gray-500">Price Details</p>
-              <p className="text-xs text-gray-500">
-                {item.currency} {perDayPrice.toLocaleString()} / day
-              </p>
-              <p className="text-sm font-medium">
-                Total: {item.currency} {totalPrice.toLocaleString()}
-              </p>
-            </div>
+            <p className="font-medium">
+              {item.currency || ""}{" "}
+              {(item.price * item.period).toLocaleString()}
+            </p>
           </div>
         </div>
       </div>

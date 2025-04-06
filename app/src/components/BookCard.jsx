@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router";
 import BookPhotosModal from "./BookPhotosModal";
 import { gql, useQuery, useMutation, useLazyQuery } from "@apollo/client";
 import { toast, Toaster } from "react-hot-toast";
+import { useCartStore } from "../store/CartStore";
 
 const GET_CURRENT_USER = gql`
   query Me {
@@ -63,8 +64,11 @@ const SEND_MESSAGE = gql`
 `;
 
 const BookCard = ({ book, isHome }) => {
+  const addToCart = useCartStore((state) => state.addToCart);
+
   const handleAddToCart = () => {
-    console.log("handle add to cart");
+    addToCart(book._id);
+    toast.success("Book added to cart!");
   };
 
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);

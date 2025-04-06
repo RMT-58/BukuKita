@@ -1,9 +1,8 @@
 import React, { useState } from "react";
-import { Upload } from "lucide-react";
 import logo from "../assets/logo.png";
 import { Link, useNavigate } from "react-router";
 import { gql, useMutation } from "@apollo/client";
-import { Toaster, toast } from "react-hot-toast";
+import { toast } from "react-hot-toast";
 
 const LOGIN = gql`
   mutation Login($input: LoginInput!) {
@@ -60,7 +59,6 @@ function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-white pb-12">
-      <Toaster />
       <div className="w-full h-64 bg-blue-500 flex items-center justify-center">
         <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
           <img src={logo} alt="Burung Hantu" />

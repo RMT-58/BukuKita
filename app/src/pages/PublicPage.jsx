@@ -220,7 +220,6 @@ const PublicPage = () => {
 
   return (
     <div className="bg-white font-sans">
-      <Toaster />
       <section
         ref={headerRef}
         className="pt-32 pb-20 bg-gradient-to-br from-blue-50 via-white to-indigo-50"
@@ -262,7 +261,6 @@ const PublicPage = () => {
           </div>
         </div>
       </section>
-
       <section className="py-12 bg-blue-600 text-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
@@ -270,7 +268,6 @@ const PublicPage = () => {
           </div>
         </div>
       </section>
-
       {/* fitur Section */}
       <section id="features" ref={featuresRef} className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -389,7 +386,6 @@ const PublicPage = () => {
           </div>
         </div>
       </section>
-
       {/* stats Section */}
       <section ref={statsRef} className="py-20 bg-blue-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -441,7 +437,6 @@ const PublicPage = () => {
           </div>
         </div>
       </section>
-
       {/* How It Works Section */}
       <section id="how-it-works" className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -505,7 +500,6 @@ const PublicPage = () => {
           </div>
         </div>
       </section>
-
       {/* Featured Books Section */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -580,7 +574,6 @@ const PublicPage = () => {
           </Swiper>
         </div>
       </section>
-
       {/* Testimonials */}
       <section id="testimonials" className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -646,7 +639,6 @@ const PublicPage = () => {
           </div>
         </div>
       </section>
-
       {/* FAQ Section */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -713,7 +705,6 @@ const PublicPage = () => {
           </div>
         </div>
       </section>
-
       {/* App Download Section */}
       <section className="py-20 bg-gradient-to-br from-blue-600 to-indigo-700 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -768,7 +759,6 @@ const PublicPage = () => {
           </div>
         </div>
       </section>
-
       {/* Call to Action */}
       <section ref={ctaRef} className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -797,7 +787,6 @@ const PublicPage = () => {
           </div>
         </div>
       </section>
-
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -291,7 +291,6 @@ function AddBookPage() {
 
   return (
     <div className="pb-20">
-      <Toaster />
       <header className="md:hidden bg-white p-4 border-b flex items-center">
         <button onClick={handleBack} className="mr-4">
           <ArrowLeft size={20} />
