@@ -54,7 +54,7 @@ describe("User API Tests", () => {
       },
     };
 
-    const response = await request(url).post("/").send(registerMutation);
+    const response = await request(url).post("/graphql").send(registerMutation);
 
     // Check if the response is successful
     expect(response.body.errors).toBeUndefined();
@@ -93,7 +93,7 @@ describe("User API Tests", () => {
       },
     };
 
-    const response = await request(url).post("/").send(loginMutation);
+    const response = await request(url).post("/graphql").send(loginMutation);
 
     // Check if the response is successful
     expect(response.body.errors).toBeUndefined();
@@ -124,7 +124,7 @@ describe("User API Tests", () => {
     };
 
     const response = await request(url)
-      .post("/")
+      .post("/graphql")
       .set("Authorization", `Bearer ${token}`)
       .send(findAllQuery);
 
@@ -161,7 +161,7 @@ describe("User API Tests", () => {
     };
 
     const response = await request(url)
-      .post("/")
+      .post("/graphql")
       .set("Authorization", `Bearer ${token}`)
       .send(findUserByIdQuery);
 
@@ -189,7 +189,7 @@ describe("User API Tests", () => {
     };
 
     const response = await request(url)
-      .post("/")
+      .post("/graphql")
       .set("Authorization", `Bearer ${token}`)
       .send(meQuery);
 
@@ -224,7 +224,7 @@ describe("User API Tests", () => {
     };
 
     const response = await request(url)
-      .post("/")
+      .post("/graphql")
       .set("Authorization", `Bearer ${token}`)
       .send(updateUserMutation);
 
@@ -257,7 +257,7 @@ describe("User API Tests", () => {
     };
 
     const response = await request(url)
-      .post("/")
+      .post("/graphql")
       .set("Authorization", `Bearer ${token}`)
       .send(updatePasswordMutation);
 
@@ -286,7 +286,9 @@ describe("User API Tests", () => {
       },
     };
 
-    const loginResponse = await request(url).post("/").send(loginMutation);
+    const loginResponse = await request(url)
+      .post("/graphql")
+      .send(loginMutation);
 
     expect(loginResponse.body.errors).toBeUndefined();
     expect(loginResponse.body.data.login).toBeDefined();
@@ -310,7 +312,7 @@ describe("User API Tests", () => {
       `,
     };
 
-    const response = await request(url).post("/").send(findAllQuery);
+    const response = await request(url).post("/graphql").send(findAllQuery);
 
     // Check if the response contains an authentication error
     expect(response.body.errors).toBeDefined();
@@ -333,7 +335,7 @@ describe("User API Tests", () => {
     };
 
     const response = await request(url)
-      .post("/")
+      .post("/graphql")
       .set("Authorization", `Bearer ${token}`)
       .send(deleteUserMutation);
 
@@ -363,7 +365,9 @@ describe("User API Tests", () => {
       },
     };
 
-    const loginResponse = await request(url).post("/").send(loginMutation);
+    const loginResponse = await request(url)
+      .post("/graphql")
+      .send(loginMutation);
 
     // Login should fail because the user is deleted
     expect(loginResponse.body.errors).toBeDefined();
