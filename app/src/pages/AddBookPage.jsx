@@ -351,7 +351,6 @@ function AddBookPage() {
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
-                  required
                   className="w-full p-2 border border-gray-300 rounded-md"
                 />
               </div>
@@ -368,7 +367,6 @@ function AddBookPage() {
                   name="author"
                   value={formData.author}
                   onChange={handleChange}
-                  required
                   className="w-full p-2 border border-gray-300 rounded-md"
                 />
               </div>
@@ -486,7 +484,7 @@ function AddBookPage() {
               >
                 {statusOptions.map((status) => (
                   <option key={status} value={status}>
-                    {status}
+                    {status === "forRent" ? "Available" : "Closed"}
                   </option>
                 ))}
               </select>
@@ -518,9 +516,9 @@ function AddBookPage() {
                 <button
                   key={genre}
                   type="button"
-                  onClick={() => handleGenreToggle(genre.toLowerCase())}
+                  onClick={() => handleGenreToggle(genre)}
                   className={`px-3 py-1 text-sm rounded-full ${
-                    formData.genres.includes(genre.toLowerCase())
+                    formData.genres.includes(genre)
                       ? "bg-gray-800 text-white"
                       : "bg-gray-100 text-gray-800 hover:bg-gray-200"
                   }`}
