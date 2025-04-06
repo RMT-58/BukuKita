@@ -17,6 +17,8 @@ import { Link, useParams } from "react-router";
 import logo from "../assets/logo.png";
 
 import { useQuery, gql } from "@apollo/client";
+import toast from "react-hot-toast";
+import { useCartStore } from "../store/CartStore";
 
 const FIND_BOOK_BY_ID = gql`
   query FindBookById($findBookByIdId: ID!) {
@@ -59,8 +61,11 @@ function BookDetailPage() {
 
   const book = data?.findBookById;
 
+  const addToCart = useCartStore((state) => state.addToCart);
+
   const handleAddToCart = () => {
-    console.log("handle rent book", book?._id);
+    addToCart(book._id);
+    toast.success("Book added to cart!");
   };
 
   const formatPrice = (price) => {
@@ -196,7 +201,7 @@ function BookDetailPage() {
                   <div>
                     <p className="text-gray-500">Status</p>
                     <p className="capitalize">
-                      {book.status === "forRent" ? "For Rent" : book.status}
+                      {book.status === "forRent" ? "Available" : "Unavailable"}
                     </p>
                   </div>
                 </div>
@@ -235,10 +240,11 @@ function BookDetailPage() {
               )}
 
               <button
+                disabled={book.status !== "forRent"}
                 onClick={handleAddToCart}
-                className="w-full bg-primary hover:bg-primary/90 text-white py-3 rounded-md font-medium transition-colors"
+                className={`w-full ${book.status !== "forRent" ? "bg-gray-400" : "bg-primary hover:bg-primary/90"} text-white py-3 rounded-md font-medium transition-colors`}
               >
-                Rent Book
+                {`${book.status !== "forRent" ? "Not Available yet!" : "Add Rent Period to Cart"}`}
               </button>
             </div>
           </div>
