@@ -267,7 +267,7 @@ const BookCard = ({ book, isHome }) => {
               <p className="text-sm capitalize">
                 {book.status === "forRent"
                   ? "Available for rent"
-                  : "Closed by uploader/Currently rented"}
+                  : "Closed/Currently rented"}
               </p>
             </div>
 
@@ -303,10 +303,11 @@ const BookCard = ({ book, isHome }) => {
 
             {isHome ? (
               <button
+                disabled={book.status !== "forRent"}
                 onClick={handleAddToCart}
-                className="flex-1 bg-[#00A8FF] text-white rounded flex items-center justify-center py-2"
+                className={`flex-1 ${book.status !== "forRent" ? "bg-gray-400" : "bg-primary hover:bg-primary/90"} text-white rounded flex items-center justify-center py-2`}
               >
-                Rent
+                {`${book.status !== "forRent" ? "Not Available yet!" : "Add Rent Period to Cart"}`}
               </button>
             ) : (
               <Link

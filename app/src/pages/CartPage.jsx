@@ -132,7 +132,7 @@ const CartPage = () => {
             </div>
 
             <button
-              className={`w-full bg-[#00A8FF] text-white py-3 rounded-full mt-4 font-medium ${isProcessing ? "opacity-70 cursor-not-allowed" : ""}`}
+              className={`w-full bg-[#00A8FF] text-white py-3 rounded-lg mt-4 font-medium ${isProcessing ? "opacity-70 cursor-not-allowed" : ""}`}
               onClick={handleCheckout}
               disabled={isProcessing}
             >
