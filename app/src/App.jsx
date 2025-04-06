@@ -28,6 +28,11 @@ const App = () => {
           <Route path="/public" element={<PublicPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+
+          {/* not found */}
+          <Route path="/public/*" element={<NotFound />} />
+          <Route path="/login/*" element={<NotFound />} />
+          <Route path="/register/*" element={<NotFound />} />
         </Route>
 
         <Route path="/" element={<PrivateLayout />}>
@@ -43,6 +48,9 @@ const App = () => {
           <Route path="/book/:bookId" element={<BookDetailPage />} />
           <Route path="/edit-book/:id" element={<EditBookPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
+
+          {/* not found */}
+          <Route path="*" element={<NotFound />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />
