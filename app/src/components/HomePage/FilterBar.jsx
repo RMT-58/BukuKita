@@ -41,11 +41,30 @@ export const FilterBar = ({
           icon={<Filter size={14} />}
         />
 
-        <FilterDropdown
+        {/* <FilterDropdown
           label="Cover"
           options={coverTypes}
           activeOption={activeFilters.cover_type}
           onSelect={(value) => handleFilterChange("cover_type", value)}
+          onClear={() => clearFilter("cover_type")}
+        /> */}
+
+        <FilterDropdown
+          label="Cover"
+          options={["Hardcover", "Paperback"]}
+          activeOption={
+            activeFilters.cover_type
+              ? activeFilters.cover_type === "hardcover"
+                ? "Hardcover"
+                : "Paperback"
+              : null
+          }
+          onSelect={(value) =>
+            handleFilterChange(
+              "cover_type",
+              value === "Hardcover" ? "hardcover" : "paperback"
+            )
+          }
           onClear={() => clearFilter("cover_type")}
         />
 
