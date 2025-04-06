@@ -1,4 +1,3 @@
-
 import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@apollo/server/express4";
 import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
@@ -31,8 +30,7 @@ import {
   typeDefs as imageTypeDefs,
 } from "./schemas/imageSchema.js";
 
-
-// Error logging middleware
+//error logging middleware
 const errorLoggingPlugin = {
   async requestDidStart() {
     return {
@@ -44,24 +42,23 @@ const errorLoggingPlugin = {
 };
 
 export async function createApolloServer(options = {}) {
-  // Create Express app and HTTP server
+  //bikinapp Express sama HTTP servernya
   const app = express();
   const httpServer = http.createServer(app);
 
-  // Enable CORS for all routes
+  //CORS
   app.use(
     cors({
       origin: "*",
-      methods: ["GET", "POST", "OPTIONS"],
+      // methods: ["GET", "POST", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization"],
     })
   );
 
   app.use("/graphql", express.json());
 
-  // Create Apollo Server
+  //create apollo server
   const server = new ApolloServer({
-
     typeDefs: [
       bookTypeDefs,
       userTypeDefs,
@@ -84,10 +81,10 @@ export async function createApolloServer(options = {}) {
     },
   });
 
-  // Start Apollo Server
+  //start Apollo server
   await server.start();
 
-  // Set up middleware for the /graphql endpoint
+  //setup middleware buatendpoint /graphql
   app.use(
     "/graphql",
     expressMiddleware(server, {
@@ -99,24 +96,21 @@ export async function createApolloServer(options = {}) {
     })
   );
 
-  // Set up Socket.IO on the same server
+  //set up socket di server yg sama aja
   const io = new Server(httpServer, {
     cors: {
       origin: "*",
-      methods: ["GET", "POST"],
+      // methods: ["GET", "POST"],
       allowedHeaders: ["Content-Type", "Authorization"],
-    },
-    cors: {
-      origin: "*",
       credentials: true,
     },
   });
 
-  // Socket.IO connection handler
+  //handle socket io connect
   io.on("connection", (socket) => {
     console.log("New client connected:", socket.id);
 
-    // Authenticate user
+    //AUTHENTICATE USER
     socket.on("authenticate", async (token) => {
       try {
         const user = await getUserFromToken(token);
@@ -130,24 +124,24 @@ export async function createApolloServer(options = {}) {
       }
     });
 
-    // Join a chat room
+    //join chatroom
     socket.on("join_room", (roomId) => {
       socket.join(roomId);
       console.log(`Socket ${socket.id} joined room ${roomId}`);
     });
 
-    // Leave a chat room
+    //keluar chatroom
     socket.on("leave_room", (roomId) => {
       socket.leave(roomId);
       console.log(`Socket ${socket.id} left room ${roomId}`);
     });
 
-    // Handle new message
+    //handle new message
     socket.on("send_message", async (messageData) => {
       try {
         const { room_id, sender_id, receiver_id, message } = messageData;
 
-        // Save message to database
+        //save message ke db
         const newChat = await Chat.createChat({
           room_id,
           sender_id,
@@ -155,10 +149,9 @@ export async function createApolloServer(options = {}) {
           message,
         });
 
-        // Get sender info
+        //GET info sendernya
         const sender = await User.findUserById(sender_id);
 
-        // Emit to room
         io.to(room_id).emit("new_message", {
           ...newChat,
           sender: {
@@ -168,7 +161,7 @@ export async function createApolloServer(options = {}) {
           },
         });
 
-        // Emit notification to receiver
+        //buat notif
         io.to(`user:${receiver_id}`).emit("message_notification", {
           room_id,
           sender: {
@@ -186,12 +179,12 @@ export async function createApolloServer(options = {}) {
       }
     });
 
-    // Handle marking messages as read
+    //handle read message
     socket.on("mark_messages_read", async ({ roomId, userId }) => {
       try {
         await Chat.markAsRead(roomId, userId);
 
-        // Notify room that messages have been read
+        //notify buat read messages
         io.to(roomId).emit("messages_read", {
           room_id: roomId,
           user_id: userId,
@@ -211,28 +204,44 @@ export async function createApolloServer(options = {}) {
     });
   });
 
-  // Add a simple route for the root path
+  //ROOT PATH
   app.get("/", (req, res) => {
     res.send("BukuKita API Server. Use /graphql for GraphQL endpoint.");
   });
 
-  // Start the server
-  const PORT = process.env.PORT || 4000;
+  // !MULAI SERVER
+  // const PORT = process.env.PORT || 4000;
 
-  await new Promise((resolve) => httpServer.listen({ port: PORT }, resolve));
+  // await new Promise((resolve) => httpServer.listen({ port: PORT }, resolve));
 
-  console.log(`🚀 Server ready at http://localhost:${PORT}/`);
-  console.log(`📈 GraphQL endpoint: http://localhost:${PORT}/graphql`);
+  // console.log(`🚀 Server ready at http://localhost:${PORT}/`);
+  // console.log(`📈 GraphQL endpoint: http://localhost:${PORT}/graphql`);
+  // console.log(`🔌 Socket.IO running on the same port`);
+
+  // return { server, httpServer };
+
+  const PORT = options.port || process.env.PORT || 4000;
+
+  const serverInfo = await new Promise((resolve) => {
+    const server = httpServer.listen({ port: PORT }, () => {
+      const address = server.address();
+      const url = `http://localhost:${address.port}`;
+      resolve({ server, url });
+    });
+  });
+
+  console.log(`🚀 Server ready at ${serverInfo.url}/`);
+  console.log(`📈 GraphQL endpoint: ${serverInfo.url}/graphql`);
   console.log(`🔌 Socket.IO running on the same port`);
 
-  return { server, httpServer };
+  return { server, httpServer, url: serverInfo.url };
 }
 
-// Check if this file is being run directly
+//cek index running direct ga
 const currentFilePath = fileURLToPath(import.meta.url);
 const isRunningDirectly = process.argv[1] === currentFilePath;
 
-// Start the server if this file is run directly
+//start servernya kalau iya
 if (isRunningDirectly) {
   createApolloServer();
 }
