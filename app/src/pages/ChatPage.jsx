@@ -5,6 +5,7 @@ import ChatItem from "../components/ChatItem";
 import { Search } from "lucide-react";
 import { gql, useQuery, useMutation } from "@apollo/client";
 import { io } from "socket.io-client";
+import logo from "../assets/logo.png";
 
 const GET_MY_ROOMS = gql`
   query GetMyRooms {
@@ -146,7 +147,7 @@ const ChatPage = () => {
             id: chatPartner?._id || "unknown",
             name: chatPartner?.name || "Unknown User",
             username: chatPartner?.username || "unknown",
-            avatar: "/placeholder.svg?height=50&width=50", // Replace with actual avatar
+            avatar: chatPartner?.avatar || logo,
           },
           lastMessage: lastMessage
             ? {
