@@ -7,7 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import BookCard from "../components/BookCard";
 import { Link } from "react-router";
 import { gql, useLazyQuery, useQuery } from "@apollo/client";
@@ -382,9 +382,9 @@ const HomePage = () => {
               </div>
 
               {/* jumlah hasil pencarian */}
-              <div className="text-sm text-gray-500 text-center my-4">
+              {/* <div className="text-sm text-gray-500 text-center my-4">
                 Showing {books.length} of {totalCount} books
-              </div>
+              </div> */}
 
               {/* buat pagination */}
               {totalPages > 1 && (

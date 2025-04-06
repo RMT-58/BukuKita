@@ -106,14 +106,8 @@ const EditProfilePage = () => {
         phone_number: formData.phone_number,
         address: formData.address,
       };
-
-      // If we have a new avatar file, we would handle it here
-      // This would typically involve uploading to a storage service first
-      // and then including the resulting URL in the updateInput
+      // implementasi upload avater (Comming soon)
       if (avatarFile) {
-        // Example (pseudocode):
-        // const avatarUrl = await uploadAvatarToStorage(avatarFile);
-        // updateInput.avatar = avatarUrl;
         console.log("Would upload avatar:", avatarFile.name);
       }
 
@@ -160,7 +154,6 @@ const EditProfilePage = () => {
 
   return (
     <div className="pb-20 md:pb-0">
-      <Toaster />
       <header className="md:hidden bg-white p-4 border-b flex items-center">
         <button onClick={handleCancel} className="mr-4">
           <ChevronLeft size={24} />

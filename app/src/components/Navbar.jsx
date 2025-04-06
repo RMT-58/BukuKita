@@ -3,20 +3,18 @@ import { Link, useLocation } from "react-router";
 import {
   BookOpen,
   Home,
-  Library,
   MessageSquare,
-  Play,
-  Plus,
   PlusCircle,
-  Search,
   ShoppingCart,
   User,
 } from "lucide-react";
 import logo from "../assets/logo.png";
+import { useCartStore } from "../store/CartStore";
 
 const Navbar = () => {
   const location = useLocation();
-  const cartCount = 1;
+  const items = useCartStore((state) => state.items);
+  const totalItems = items.length;
 
   const isActiveRoute = (path) => {
     return location.pathname === path;
@@ -126,11 +124,11 @@ const Navbar = () => {
               <ShoppingCart
                 className={` text-xl ${isActiveRoute("/cart") ? "text-primary" : "text-gray-700"}`}
               />
-              {cartCount > 0 && (
+              {totalItems > 0 && (
                 <span
                   className={`absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full`}
                 >
-                  {cartCount}
+                  {totalItems}
                 </span>
               )}
             </Link>

@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from "react-router";
 import PublicNavbar from "../components/PublicNavbar";
+import { Toaster } from "react-hot-toast";
 
 export default function PublicLayout() {
   const accessToken = localStorage.getItem("access_token");
@@ -11,6 +12,7 @@ export default function PublicLayout() {
   return (
     <div>
       <PublicNavbar />
+      <Toaster />
       <Outlet />
     </div>
   );
