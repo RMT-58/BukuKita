@@ -88,7 +88,7 @@ const UPDATE_BOOK_MUTATION = gql`
 
 const coverTypes = ["Hardcover", "Paperback"];
 const conditions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-const statusOptions = ["For Rent", "Closed"];
+const statusOptions = ["forRent", "isClosed"];
 const genreOptions = [
   "Fiction",
   "Non-Fiction",
@@ -478,7 +478,6 @@ function EditBookPage() {
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
-                  required
                   className="w-full p-2 border border-gray-300 rounded-md"
                 />
               </div>
@@ -495,7 +494,6 @@ function EditBookPage() {
                   name="author"
                   value={formData.author}
                   onChange={handleChange}
-                  required
                   className="w-full p-2 border border-gray-300 rounded-md"
                 />
               </div>
@@ -613,7 +611,7 @@ function EditBookPage() {
               >
                 {statusOptions.map((status) => (
                   <option key={status} value={status}>
-                    {status}
+                    {status === "forRent" ? "Available" : "Closed"}
                   </option>
                 ))}
               </select>
@@ -645,9 +643,9 @@ function EditBookPage() {
                 <button
                   key={genre}
                   type="button"
-                  onClick={() => handleGenreToggle(genre.toLowerCase())}
+                  onClick={() => handleGenreToggle(genre)}
                   className={`px-3 py-1 text-sm rounded-full ${
-                    formData.genres.includes(genre.toLowerCase())
+                    formData.genres.includes(genre)
                       ? "bg-gray-800 text-white"
                       : "bg-gray-100 text-gray-800 hover:bg-gray-200"
                   }`}
