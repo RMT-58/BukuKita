@@ -264,7 +264,11 @@ const BookCard = ({ book, isHome }) => {
           <div className="flex justify-between items-center">
             <div>
               <p className="text-sm text-gray-500">Status</p>
-              <p className="text-sm capitalize">{book.status || "Available"}</p>
+              <p className="text-sm capitalize">
+                {book.status === "forRent"
+                  ? "Available for rent"
+                  : "Closed by uploader/Currently rented"}
+              </p>
             </div>
 
             <div className="text-right">
