@@ -188,7 +188,9 @@ const BookCard = ({ book, isHome }) => {
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-sm">{book.author}</p>
-                <p className="text-sm font-medium mt-1">{book.cover_type}</p>
+                <p className="text-sm font-medium mt-2 ">
+                  {book.cover_type === "hardcover" ? "Hardcover" : "Paperback"}
+                </p>
                 <p className="text-sm">
                   Condition: {book.condition}/10
                   {book.condition_details && (
