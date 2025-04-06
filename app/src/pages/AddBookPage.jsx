@@ -243,18 +243,44 @@ function AddBookPage() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  const validateForm = () => {
+    //VALIDASI DULU
     if (!formData.title || !formData.author) {
       setErrorMessage("Title and author are required!");
       toast.error("Title and author are required!");
-      return;
+      return false;
     }
 
+    //check ada foto ga
     if (!thumbnailFile) {
       setErrorMessage("Please upload a thumbnail image");
       toast.error("Please upload a thumbnail image");
+      return false;
+    }
+
+    //cek covertype
+    if (!formData.cover_type) {
+      setErrorMessage("Please select a cover type");
+      toast.error("Please select a cover type");
+      return false;
+    }
+
+    //harus ada 1 genre
+    if (formData.genres.length === 0) {
+      setErrorMessage("Please select at least one genre");
+      toast.error("Please select at least one genre");
+      return false;
+    }
+
+    //semua kelar
+    setErrorMessage("");
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
       return;
     }
 
