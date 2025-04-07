@@ -1,8 +1,19 @@
-import { Edit, ExternalLink, Image, Trash2 } from "lucide-react";
+import {
+  Edit,
+  ExternalLink,
+  Image,
+  Trash2,
+  AlertCircle,
+  Check,
+  Clock,
+  Book,
+  Settings,
+} from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { formatUnixTimestamp } from "../utils/formatDate";
 import BookPhotosModal from "./BookPhotosModal";
+import { toast, Toaster } from "react-hot-toast";
 
 const MyBookCard = ({
   book,
@@ -33,8 +44,12 @@ const MyBookCard = ({
           },
         },
       });
+      toast.success(
+        `Book is now ${newStatus === "forRent" ? "available" : "unavailable"} for rent`
+      );
     } catch (error) {
       console.error("Failed to update book status:", error);
+      toast.error("Failed to update book status");
     } finally {
       setIsUpdating(false);
     }
@@ -52,11 +67,13 @@ const MyBookCard = ({
           deleteBookId: book._id,
         },
       });
+      toast.success("Book deleted successfully");
       if (onDeleteSuccess) {
         onDeleteSuccess();
       }
     } catch (error) {
       console.error("Failed to delete book:", error);
+      toast.error("Failed to delete book");
     } finally {
       setIsDeleting(false);
       setShowDeleteConfirm(false);
@@ -74,6 +91,24 @@ const MyBookCard = ({
 
   const genres = Array.isArray(book.genres) ? book.genres : [];
   const photos = Array.isArray(book.image_urls) ? book.image_urls : [];
+
+  const getStatusDetails = () => {
+    if (book.status === "forRent") {
+      return {
+        icon: <Check size={16} className="text-green-500" />,
+        text: "Available for rent",
+        color: "text-green-500",
+      };
+    } else {
+      return {
+        icon: <Clock size={16} className="text-red-500" />,
+        text: "Not available",
+        color: "text-red-500",
+      };
+    }
+  };
+
+  const statusDetails = getStatusDetails();
 
   return (
     <>
@@ -96,16 +131,46 @@ const MyBookCard = ({
                 >
                   {book.title}
                 </Link>
-                <div className="text-gray-500 text-sm">
+                <div className="text-gray-500 text-sm flex items-center">
+                  <svg
+                    className="w-4 h-4 mr-1"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
                   {formatUnixTimestamp(book.created_at)}
                 </div>
               </div>
 
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm">{book.author}</p>
-                  <p className="text-sm font-medium mt-1">{book.cover_type}</p>
-                  <p className="text-sm">
+                  <p className="text-sm flex items-center">
+                    <svg
+                      className="w-4 h-4 mr-1 text-gray-500"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M12 20h9"></path>
+                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                    {book.author}
+                  </p>
+                  <p className="text-sm font-medium mt-1 flex items-center">
+                    <Book size={16} className="mr-1 text-gray-500" />
+                    {book.cover_type}
+                  </p>
+                  <p className="text-sm flex items-center">
+                    <Settings size={16} className="mr-1 text-gray-500" />
                     Condition: {book.condition}/10
                     {book.condition_details && (
                       <Link
@@ -120,16 +185,31 @@ const MyBookCard = ({
                 </div>
 
                 <div className="text-right">
-                  <p className="text-sm">{book.uploaded_by.username}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-sm font-medium">
-                      <span
-                        className={`${
-                          book.status === "forRent"
-                            ? "text-green-600"
-                            : "text-red-600"
-                        }`}
-                      >
+                  <p className="text-sm flex items-center justify-end">
+                    <svg
+                      className="w-4 h-4 mr-1 text-gray-500"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    {book.uploaded_by.username}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1 justify-end">
+                    <span
+                      className={`text-sm font-medium flex items-center ${
+                        book.status === "forRent"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {statusDetails.icon}
+                      <span className="ml-1">
                         {book.status === "forRent"
                           ? "Available"
                           : "Not Available"}
@@ -167,7 +247,7 @@ const MyBookCard = ({
                     onClick={openPhotoModal}
                     className="text-[#00A8FF] text-xs hover:underline flex items-center"
                   >
-                    <Image size={14} className="mr-1" />
+                    <Image size={16} className="mr-1" />
                     View photos ({photos.length})
                   </button>
                 </div>
@@ -178,8 +258,20 @@ const MyBookCard = ({
                   {genres.slice(0, 3).map((genre, index) => (
                     <span
                       key={index}
-                      className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded"
+                      className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded flex items-center"
                     >
+                      <svg
+                        className="w-3 h-3 mr-1"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                      </svg>
                       {genre}
                     </span>
                   ))}
@@ -197,38 +289,31 @@ const MyBookCard = ({
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm text-gray-500">Status</p>
-                <p className="text-sm">
-                  {book.status === "forRent"
-                    ? "Available for rent"
-                    : "Not available"}
+                <p
+                  className={`text-sm capitalize flex items-center ${statusDetails.color}`}
+                >
+                  {statusDetails.icon}
+                  <span className="ml-1">{statusDetails.text}</span>
                 </p>
               </div>
 
               <div className="text-right">
                 <p className="text-sm text-gray-500">For rent</p>
-                <p className="text-sm font-medium">
+                <p className="text-sm font-medium flex items-center justify-end">
                   Rp. {book.price ? book.price.toLocaleString() : "0"} per week
                 </p>
               </div>
             </div>
 
             <div className="flex mt-3 gap-2">
-              {/* <button
-                onClick={handleEdit}
-                className="w-12 h-12 border border-[#00A8FF] text-[#00A8FF] rounded flex items-center justify-center"
-                aria-label="Edit book"
-              >
-                <Edit size={18} />
-              </button> */}
-
               <button
                 onClick={handleEdit}
                 disabled={book.status === "isClosed"}
                 className={`w-12 h-12 border ${
                   book.status === "isClosed"
                     ? "border-gray-400 text-gray-400 cursor-not-allowed"
-                    : "border-[#00A8FF] text-[#00A8FF]"
-                } rounded flex items-center justify-center`}
+                    : "border-[#00A8FF] text-[#00A8FF] hover:bg-[#f0f9ff]"
+                } rounded flex items-center justify-center transition-colors duration-200`}
                 aria-label={
                   book.status === "isClosed"
                     ? "Cannot edit while rented"
@@ -244,8 +329,9 @@ const MyBookCard = ({
               </button>
               <button
                 onClick={handleDeleteClick}
-                className="w-12 h-12 border border-red-500 text-red-500 rounded flex items-center justify-center"
+                className="w-12 h-12 border border-red-500 text-red-500 rounded flex items-center justify-center hover:bg-red-50 transition-colors duration-200"
                 aria-label="Delete book"
+                title="Delete book"
                 disabled={isDeleting}
               >
                 <Trash2 size={18} className={isDeleting ? "opacity-50" : ""} />
@@ -253,21 +339,24 @@ const MyBookCard = ({
 
               <Link
                 to={`/book/${book._id}`}
-                className="flex-1 bg-[#00A8FF] text-white rounded flex items-center justify-center py-2"
+                className="flex-1 bg-[#00A8FF] hover:bg-[#0098e5] text-white rounded flex items-center justify-center gap-2 py-2 transition-colors duration-200"
               >
+                <Book size={18} />
                 <span className="font-medium">View Details</span>
-                <ExternalLink size={16} className="ml-1" />
+                <ExternalLink size={16} />
               </Link>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-sm mx-4 w-full">
-            <h3 className="text-lg font-medium mb-4">Delete Book</h3>
+            <h3 className="text-lg font-medium mb-4 flex items-center">
+              <AlertCircle size={20} className="text-red-500 mr-2" />
+              Delete Book
+            </h3>
             <p className="text-gray-600 mb-6">
               Are you sure you want to delete "{book.title}"? This action cannot
               be undone.
@@ -275,17 +364,46 @@ const MyBookCard = ({
             <div className="flex justify-end gap-3">
               <button
                 onClick={handleDeleteCancel}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                 disabled={isDeleting}
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteConfirm}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors duration-200 flex items-center justify-center"
                 disabled={isDeleting}
               >
-                {isDeleting ? "Deleting..." : "Delete"}
+                {isDeleting ? (
+                  <>
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} className="mr-1" />
+                    Delete
+                  </>
+                )}
               </button>
             </div>
           </div>

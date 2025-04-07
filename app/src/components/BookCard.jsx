@@ -1,4 +1,15 @@
-import { Edit, Image, Star } from "lucide-react";
+import {
+  Ban,
+  Book,
+  Check,
+  Edit,
+  Image,
+  MessageCircle,
+  Settings,
+  ShoppingCart,
+  Star,
+  Wrench,
+} from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import BookPhotosModal from "./BookPhotosModal";
@@ -149,6 +160,46 @@ const BookCard = ({ book, isHome }) => {
 
   const photos = Array.isArray(book.image_urls) ? book.image_urls : [];
 
+  // dapatkan status dari book
+  const getStatusDetails = () => {
+    if (book.status === "forRent") {
+      return {
+        icon: <Check size={16} className="text-green-500" />,
+        text: "Available for rent",
+        color: "text-green-500",
+      };
+    } else {
+      return {
+        icon: <Ban size={16} className="text-red-500" />,
+        text: "Closed/Currently rented",
+        color: "text-red-500",
+      };
+    }
+  };
+
+  const statusDetails = getStatusDetails();
+
+  // Convert condition ke bintang
+  const getConditionStars = (condition) => {
+    const rating = condition || 0;
+    let filledStars = 0;
+
+    if (rating <= 2) filledStars = 1;
+    else if (rating <= 4) filledStars = 2;
+    else if (rating <= 6) filledStars = 3;
+    else if (rating <= 8) filledStars = 4;
+    else filledStars = 5;
+
+    return [...Array(5)].map((_, i) => (
+      <Star
+        key={i}
+        size={16}
+        fill={i < filledStars ? "currentColor" : "none"}
+        className={i < filledStars ? "text-yellow-400" : "text-gray-300"}
+      />
+    ));
+  };
+
   return (
     <div className="bg-white rounded-md overflow-hidden shadow-sm mb-4">
       <Toaster />
@@ -172,18 +223,46 @@ const BookCard = ({ book, isHome }) => {
                 {book.title}
               </Link>
               {book.uploaded_by && (
-                <div className="text-gray-500 text-sm">
+                <div className="text-gray-500 text-sm flex items-center">
+                  <svg
+                    className="w-4 h-4 mr-1"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                  </svg>
                   {book.uploaded_by.address}
                 </div>
               )}
             </div>
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm">{book.author}</p>
-                <p className="text-sm font-medium mt-2 ">
+                <p className="text-sm flex items-center">
+                  <svg
+                    className="w-4 h-4 mr-1 text-gray-500"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                  </svg>
+                  {book.author}
+                </p>
+                <p className="text-sm font-medium mt-2 flex items-center">
+                  <Book size={16} className="mr-1 text-gray-500" />
                   {book.cover_type === "hardcover" ? "Hardcover" : "Paperback"}
                 </p>
-                <p className="text-sm">
+                <p className="text-sm flex items-center">
+                  <Settings size={16} className="mr-1 text-gray-500" />
                   Condition: {book.condition}/10
                   {book.condition_details && (
                     <Link
@@ -198,27 +277,23 @@ const BookCard = ({ book, isHome }) => {
               </div>
 
               <div className="text-right">
-                <p className="text-sm">{book.uploaded_by?.name || "Unknown"}</p>
-                <div className="flex text-yellow-400 mt-1">
-                  {[...Array(5)].map((_, i) => {
-                    const rating = book.condition || 0;
-
-                    let filledStars = 0;
-                    if (rating <= 2) filledStars = 1;
-                    else if (rating <= 4) filledStars = 2;
-                    else if (rating <= 6) filledStars = 3;
-                    else if (rating <= 8) filledStars = 4;
-                    else filledStars = 5;
-
-                    return (
-                      <Star
-                        key={i}
-                        size={14}
-                        fill={i < filledStars ? "currentColor" : "none"}
-                        className={i < filledStars ? "" : "text-gray-300"}
-                      />
-                    );
-                  })}
+                <p className="text-sm flex items-center justify-end">
+                  <svg
+                    className="w-4 h-4 mr-1 text-gray-500"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                  {book.uploaded_by?.name || "Unknown"}
+                </p>
+                <div className="flex justify-end mt-1">
+                  {getConditionStars(book.condition)}
                 </div>
               </div>
             </div>
@@ -229,7 +304,7 @@ const BookCard = ({ book, isHome }) => {
                   onClick={openPhotoModal}
                   className="text-[#00A8FF] text-xs hover:underline flex items-center"
                 >
-                  <Image size={14} className="mr-1" />
+                  <Image size={16} className="mr-1" />
                   View photos ({photos.length})
                 </button>
               </div>
@@ -240,8 +315,20 @@ const BookCard = ({ book, isHome }) => {
                 book.genres.map((genre, index) => (
                   <span
                     key={index}
-                    className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded"
+                    className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded flex items-center"
                   >
+                    <svg
+                      className="w-3 h-3 mr-1"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                    </svg>
                     {genre}
                   </span>
                 ))}
@@ -258,31 +345,23 @@ const BookCard = ({ book, isHome }) => {
           <div className="flex justify-between items-center">
             <div>
               <p className="text-sm text-gray-500">Status</p>
-              <p className="text-sm capitalize">
-                {book.status === "forRent"
-                  ? "Available for rent"
-                  : "Closed/Currently rented"}
+              <p
+                className={`text-sm capitalize flex items-center ${statusDetails.color}`}
+              >
+                {statusDetails.icon}
+                <span className="ml-1">{statusDetails.text}</span>
               </p>
             </div>
 
             <div className="text-right">
               <p className="text-sm text-gray-500">For rent</p>
-              <p className="text-sm font-medium">
+              <p className="text-sm font-medium flex items-center justify-end">
                 Rp {book.price?.toLocaleString() || 0} per week
               </p>
             </div>
           </div>
 
           <div className="flex mt-3 gap-2">
-            {/* {isBookOwner ? (
-              <button
-                onClick={() => navigate(`/edit-book/${book._id}`)}
-                className="flex-1 bg-[#00A8FF] text-white rounded flex items-center justify-center gap-2 py-2"
-              >
-                <Edit size={18} />
-                Edit Book
-              </button>
-            ) : ( */}
             {isBookOwner ? (
               <button
                 onClick={() => navigate(`/edit-book/${book._id}`)}
@@ -290,49 +369,63 @@ const BookCard = ({ book, isHome }) => {
                 className={`flex-1 ${
                   book.status === "isClosed"
                     ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-[#00A8FF]"
-                } text-white h-12 rounded flex items-center justify-center gap-2 py-2`}
+                    : "bg-[#00A8FF] hover:bg-[#0098e5]"
+                } text-white h-12 rounded flex items-center justify-center gap-2 py-2 transition-colors duration-200`}
               >
-                <Edit size={18} />
-                {book.status === "isClosed" ? "Currently Rented" : "Edit Book"}
+                {book.status === "isClosed" ? (
+                  <div className="relative">
+                    <Book className="text-white w-5 h-5" />
+                    <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-0.5 shadow">
+                      <Check className="text-white w-3 h-3" />
+                    </div>
+                  </div>
+                ) : (
+                  <Edit size={18} />
+                )}
+                <span className="ml-1">
+                  {book.status === "isClosed"
+                    ? "Currently Rented"
+                    : "Edit Book"}
+                </span>
               </button>
             ) : (
               <>
                 <button
                   onClick={handleChatOwner}
-                  className="w-12 h-12 border border-[#00A8FF] text-[#00A8FF] rounded flex items-center justify-center"
+                  className="w-12 h-12 border border-[#00A8FF] text-[#00A8FF] rounded flex items-center justify-center hover:bg-[#f0f9ff] transition-colors duration-200"
+                  title="Chat with owner"
                 >
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M8 10H8.01M12 10H12.01M16 10H16.01M9 16H5C3.89543 16 3 15.1046 3 14V6C3 4.89543 3.89543 4 5 4H19C20.1046 4 21 4.89543 21 6V14C21 15.1046 20.1046 16 19 16H14L9 21V16Z"
-                      stroke="#00A8FF"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                  <MessageCircle size={20} />
                 </button>
 
                 {isHome ? (
                   <button
                     disabled={book.status !== "forRent"}
                     onClick={handleAddToCart}
-                    className={`flex-1 ${book.status !== "forRent" ? "bg-gray-400" : "bg-primary hover:bg-primary/90"} text-white rounded flex items-center justify-center py-2`}
+                    className={`flex-1 ${
+                      book.status !== "forRent"
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-[#00A8FF] hover:bg-[#0098e5]"
+                    } text-white rounded flex items-center justify-center gap-2 py-2 transition-colors duration-200`}
                   >
-                    {`${book.status !== "forRent" ? "Currently Unavailable!" : "Add Rent Period to Cart"}`}
+                    {book.status !== "forRent" ? (
+                      <Ban size={18} />
+                    ) : (
+                      <ShoppingCart size={18} />
+                    )}
+                    <span className="ml-1">
+                      {book.status !== "forRent"
+                        ? "Currently Unavailable"
+                        : "Add Rent Period to Cart"}
+                    </span>
                   </button>
                 ) : (
                   <Link
                     to={`/book/${book._id}`}
-                    className="flex-1 bg-[#00A8FF] text-white rounded flex items-center justify-center py-2"
+                    className="flex-1 bg-[#00A8FF] hover:bg-[#0098e5] text-white rounded flex items-center justify-center gap-2 py-2 transition-colors duration-200"
                   >
-                    View Details
+                    <Book size={18} />
+                    <span className="ml-1">View Details</span>
                   </Link>
                 )}
               </>
