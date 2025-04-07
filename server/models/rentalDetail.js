@@ -16,14 +16,18 @@ export default class RentalDetail {
   }
 
   static async findDetailsByRentalId(rentalId) {
-    return await this.getCollection().find({ rental_id: rentalId }).toArray();
+    return await this.getCollection()
+      .find({
+        rental_id: new ObjectId(rentalId),
+      })
+      .toArray();
   }
 
   static async findActiveRentalsByBookId(bookId) {
     const currentDate = new Date();
     return await this.getCollection()
       .find({
-        book_id: bookId,
+        book_id: new ObjectId(bookId),
         rental_end: { $gte: currentDate },
       })
       .toArray();
@@ -69,7 +73,7 @@ export default class RentalDetail {
     }
 
     const newRentalDetail = {
-      book_id,
+      book_id: new ObjectId(book_id),
       price,
       period,
       total,
@@ -80,7 +84,7 @@ export default class RentalDetail {
       cover_type,
       thumbnail_url: thumbnail_url || "",
       image_urls,
-      rental_id,
+      rental_id: new ObjectId(rental_id),
       rental_start: startDate,
       rental_end: endDate,
       created_at: new Date(),

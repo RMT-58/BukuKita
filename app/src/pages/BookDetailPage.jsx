@@ -267,7 +267,7 @@ function BookDetailPage() {
                 </div>
               )}
 
-              {isBookOwner ? (
+              {/* {isBookOwner ? (
                 <button
                   onClick={handleEditBook}
                   className="w-full bg-primary hover:bg-primary/90 text-white py-3 rounded-md font-medium transition-colors flex items-center justify-center gap-2"
@@ -275,13 +275,29 @@ function BookDetailPage() {
                   <Edit size={18} />
                   Edit Book
                 </button>
+              ) : ( */}
+              {isBookOwner ? (
+                <button
+                  onClick={handleEditBook}
+                  disabled={book.status === "isClosed"}
+                  className={`w-full ${
+                    book.status === "isClosed"
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-primary hover:bg-primary/90"
+                  } text-white py-3 rounded-md font-medium transition-colors flex items-center justify-center gap-2`}
+                >
+                  <Edit size={18} />
+                  {book.status === "isClosed"
+                    ? "Can't Edit While Rented"
+                    : "Edit Book"}
+                </button>
               ) : (
                 <button
                   disabled={book.status !== "forRent"}
                   onClick={handleAddToCart}
                   className={`w-full ${book.status !== "forRent" ? "bg-gray-400" : "bg-primary hover:bg-primary/90"} text-white py-3 rounded-md font-medium transition-colors`}
                 >
-                  {`${book.status !== "forRent" ? "Not Available yet!" : "Add Rent Period to Cart"}`}
+                  {`${book.status !== "forRent" ? "Currently Unavailable!" : "Add Rent Period to Cart"}`}
                 </button>
               )}
             </div>

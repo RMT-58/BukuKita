@@ -20,11 +20,12 @@ export default class Book {
       sortOrder,
     } = params;
 
-    let queryObject = {};
+    // Build match query
+    let matchStage = {};
 
     // SEARCH CONDITION
     if (query && query.trim() !== "") {
-      queryObject.$or = [
+      matchStage.$or = [
         { title: { $regex: query, $options: "i" } },
         { author: { $regex: query, $options: "i" } },
         { genres: { $regex: query, $options: "i" } },
@@ -33,33 +34,32 @@ export default class Book {
 
     // FILTERS
     if (filters.status) {
-      queryObject.status = filters.status;
+      matchStage.status = filters.status;
     }
 
     if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
-      queryObject.price = {};
+      matchStage.price = {};
       if (filters.minPrice !== undefined) {
-        queryObject.price.$gte = filters.minPrice;
+        matchStage.price.$gte = filters.minPrice;
       }
       if (filters.maxPrice !== undefined) {
-        queryObject.price.$lte = filters.maxPrice;
+        matchStage.price.$lte = filters.maxPrice;
       }
     }
 
     if (filters.genres && filters.genres.length > 0) {
-      queryObject.genres = { $in: filters.genres };
+      matchStage.genres = { $in: filters.genres };
     }
 
     if (filters.cover_type) {
-      queryObject.cover_type = filters.cover_type;
+      matchStage.cover_type = filters.cover_type;
     }
 
     if (filters.uploaded_by) {
-      const uploaded_by =
+      matchStage.uploaded_by =
         typeof filters.uploaded_by === "string"
           ? new ObjectId(filters.uploaded_by)
           : filters.uploaded_by;
-      queryObject.uploaded_by = uploaded_by;
     }
 
     // SORT
@@ -68,21 +68,119 @@ export default class Book {
       sortOptions = { [sortField]: sortOrder || -1 };
     }
 
-    // PAGINATION
-    const totalCount = await collection.countDocuments(queryObject);
+    // Get current date for availability check
+    const currentDate = new Date();
+
+    // Build the aggregation pipeline
+    const pipeline = [
+      // Stage 1: Match criteria
+      { $match: matchStage },
+
+      // Stage 2: Lookup rental details
+      {
+        $lookup: {
+          from: "rentalDetails",
+          localField: "_id",
+          foreignField: "book_id",
+          as: "rentalDetails",
+        },
+      },
+
+      // Stage 3: Filter rentalDetails to only active ones
+      {
+        $addFields: {
+          activeRentalDetails: {
+            $filter: {
+              input: "$rentalDetails",
+              as: "detail",
+              cond: { $gte: ["$$detail.rental_end", currentDate] },
+            },
+          },
+        },
+      },
+
+      // Stage 4: Lookup rentals for the active rental details
+      {
+        $lookup: {
+          from: "rentals",
+          let: { rentalIds: "$activeRentalDetails.rental_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $in: ["$_id", "$$rentalIds"] },
+                    { $eq: ["$status", "completed"] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "completedRentals",
+        },
+      },
+
+      // Stage 5: Determine if book is unavailable
+      {
+        $addFields: {
+          isUnavailable: {
+            $cond: {
+              if: { $gt: [{ $size: "$completedRentals" }, 0] },
+              then: true,
+              else: false,
+            },
+          },
+        },
+      },
+
+      // Stage 6: Update status if unavailable
+      {
+        $addFields: {
+          status: {
+            $cond: {
+              if: "$isUnavailable",
+              then: "isClosed",
+              else: "$status",
+            },
+          },
+        },
+      },
+
+      // Stage 7: Project out temporary fields
+      {
+        $project: {
+          rentalDetails: 0,
+          activeRentalDetails: 0,
+          completedRentals: 0,
+          isUnavailable: 0,
+        },
+      },
+
+      // Stage 8: Sort
+      { $sort: sortOptions },
+
+      // Stage 9: Skip for pagination
+      { $skip: skip },
+
+      // Stage 10: Limit results
+      { $limit: limit },
+    ];
+
+    // Get total count for pagination
+    const countPipeline = [{ $match: matchStage }, { $count: "totalCount" }];
+
+    // Execute both pipelines
+    const [countResult, books] = await Promise.all([
+      collection.aggregate(countPipeline).toArray(),
+      collection.aggregate(pipeline).toArray(),
+    ]);
+
+    const totalCount = countResult.length > 0 ? countResult[0].totalCount : 0;
     const totalPages = Math.ceil(totalCount / limit);
     const currentPage = Math.floor(skip / limit) + 1;
 
-    // RESULT
-    const data = await collection
-      .find(queryObject)
-      .sort(sortOptions)
-      .skip(skip)
-      .limit(limit)
-      .toArray();
-
     return {
-      data,
+      data: books,
       pagination: {
         totalCount,
         totalPages,
@@ -91,11 +189,187 @@ export default class Book {
       },
     };
   }
+  // static async findAll(params = {}) {
+  //   const collection = this.getCollection();
+  //   const {
+  //     query = "",
+  //     filters = {},
+  //     limit = 12,
+  //     skip = 0,
+  //     sort = { created_at: -1 },
+  //     sortField,
+  //     sortOrder,
+  //   } = params;
+
+  //   let queryObject = {};
+
+  //   // SEARCH CONDITION
+  //   if (query && query.trim() !== "") {
+  //     queryObject.$or = [
+  //       { title: { $regex: query, $options: "i" } },
+  //       { author: { $regex: query, $options: "i" } },
+  //       { genres: { $regex: query, $options: "i" } },
+  //     ];
+  //   }
+
+  //   // FILTERS
+  //   if (filters.status) {
+  //     queryObject.status = filters.status;
+  //   }
+
+  //   if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+  //     queryObject.price = {};
+  //     if (filters.minPrice !== undefined) {
+  //       queryObject.price.$gte = filters.minPrice;
+  //     }
+  //     if (filters.maxPrice !== undefined) {
+  //       queryObject.price.$lte = filters.maxPrice;
+  //     }
+  //   }
+
+  //   if (filters.genres && filters.genres.length > 0) {
+  //     queryObject.genres = { $in: filters.genres };
+  //   }
+
+  //   if (filters.cover_type) {
+  //     queryObject.cover_type = filters.cover_type;
+  //   }
+
+  //   if (filters.uploaded_by) {
+  //     const uploaded_by =
+  //       typeof filters.uploaded_by === "string"
+  //         ? new ObjectId(filters.uploaded_by)
+  //         : filters.uploaded_by;
+  //     queryObject.uploaded_by = uploaded_by;
+  //   }
+
+  //   // SORT
+  //   let sortOptions = sort;
+  //   if (sortField) {
+  //     sortOptions = { [sortField]: sortOrder || -1 };
+  //   }
+
+  //   // PAGINATION
+  //   const totalCount = await collection.countDocuments(queryObject);
+  //   const totalPages = Math.ceil(totalCount / limit);
+  //   const currentPage = Math.floor(skip / limit) + 1;
+
+  //   // RESULT
+  //   const data = await collection
+  //     .find(queryObject)
+  //     .sort(sortOptions)
+  //     .skip(skip)
+  //     .limit(limit)
+  //     .toArray();
+
+  //   return {
+  //     data,
+  //     pagination: {
+  //       totalCount,
+  //       totalPages,
+  //       currentPage,
+  //       limit,
+  //     },
+  //   };
+  // }
 
   static async findBookById(id) {
     const collection = this.getCollection();
-    return await collection.findOne({ _id: new ObjectId(id) });
+    const _id = new ObjectId(id);
+    const currentDate = new Date();
+
+    const pipeline = [
+      // Stage 1: Match the specific book by ID
+      { $match: { _id } },
+
+      // Stage 2: Lookup rental details
+      {
+        $lookup: {
+          from: "rentalDetails",
+          localField: "_id",
+          foreignField: "book_id",
+          as: "rentalDetails",
+        },
+      },
+
+      // Stage 3: Filter rentalDetails to only active ones
+      {
+        $addFields: {
+          activeRentalDetails: {
+            $filter: {
+              input: "$rentalDetails",
+              as: "detail",
+              cond: { $gte: ["$$detail.rental_end", currentDate] },
+            },
+          },
+        },
+      },
+
+      // Stage 4: Lookup rentals for the active rental details
+      {
+        $lookup: {
+          from: "rentals",
+          let: { rentalIds: "$activeRentalDetails.rental_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $in: ["$_id", "$$rentalIds"] },
+                    { $eq: ["$status", "completed"] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "completedRentals",
+        },
+      },
+
+      // Stage 5: Determine if book is unavailable
+      {
+        $addFields: {
+          isUnavailable: {
+            $cond: {
+              if: { $gt: [{ $size: "$completedRentals" }, 0] },
+              then: true,
+              else: false,
+            },
+          },
+        },
+      },
+
+      // Stage 6: Update status if unavailable
+      {
+        $addFields: {
+          status: {
+            $cond: {
+              if: "$isUnavailable",
+              then: "isClosed",
+              else: "$status",
+            },
+          },
+        },
+      },
+
+      // Stage 7: Project out temporary fields
+      {
+        $project: {
+          rentalDetails: 0,
+          activeRentalDetails: 0,
+          completedRentals: 0,
+          isUnavailable: 0,
+        },
+      },
+    ];
+
+    const results = await collection.aggregate(pipeline).toArray();
+    return results.length > 0 ? results[0] : null;
   }
+  // static async findBookById(id) {
+  //   const collection = this.getCollection();
+  //   return await collection.findOne({ _id: new ObjectId(id) });
+  // }
 
   static async addBook(bookData) {
     const {

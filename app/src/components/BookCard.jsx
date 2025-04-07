@@ -274,13 +274,27 @@ const BookCard = ({ book, isHome }) => {
           </div>
 
           <div className="flex mt-3 gap-2">
-            {isBookOwner ? (
+            {/* {isBookOwner ? (
               <button
                 onClick={() => navigate(`/edit-book/${book._id}`)}
                 className="flex-1 bg-[#00A8FF] text-white rounded flex items-center justify-center gap-2 py-2"
               >
                 <Edit size={18} />
                 Edit Book
+              </button>
+            ) : ( */}
+            {isBookOwner ? (
+              <button
+                onClick={() => navigate(`/edit-book/${book._id}`)}
+                disabled={book.status === "isClosed"}
+                className={`flex-1 ${
+                  book.status === "isClosed"
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-[#00A8FF]"
+                } text-white rounded flex items-center justify-center gap-2 py-2`}
+              >
+                <Edit size={18} />
+                {book.status === "isClosed" ? "Currently Rented" : "Edit Book"}
               </button>
             ) : (
               <>
@@ -311,7 +325,7 @@ const BookCard = ({ book, isHome }) => {
                     onClick={handleAddToCart}
                     className={`flex-1 ${book.status !== "forRent" ? "bg-gray-400" : "bg-primary hover:bg-primary/90"} text-white rounded flex items-center justify-center py-2`}
                   >
-                    {`${book.status !== "forRent" ? "Not Available yet!" : "Add Rent Period to Cart"}`}
+                    {`${book.status !== "forRent" ? "Currently Unavailable!" : "Add Rent Period to Cart"}`}
                   </button>
                 ) : (
                   <Link
