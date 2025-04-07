@@ -86,13 +86,13 @@ const BookCard = ({ book, isHome }) => {
         return;
       }
 
-      if (!user || !user.me || !user.me._id) {
+      if (!user || !user._id) {
         // jika belum login, redirect ke halaman login
         navigate("/login");
         return;
       }
 
-      const currentUserId = user.me._id;
+      const currentUserId = user._id;
       const uploaderId = book.uploaded_by._id;
 
       // tidak boleh chat dengan diri sendiri

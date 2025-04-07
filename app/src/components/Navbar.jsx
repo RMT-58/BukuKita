@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link, useLocation } from "react-router";
 import {
   BookOpen,
@@ -10,11 +10,76 @@ import {
 } from "lucide-react";
 import logo from "../assets/logo.png";
 import { useCartStore } from "../store/CartStore";
+import { gql, useQuery } from "@apollo/client";
+import { io } from "socket.io-client";
+
+// query untuk mendapatkan room dengan unread count
+const GET_MY_ROOMS = gql`
+  query GetMyRooms {
+    myRooms {
+      _id
+      unreadCount
+    }
+  }
+`;
 
 const Navbar = () => {
   const location = useLocation();
   const items = useCartStore((state) => state.items);
   const totalItems = items.length;
+  const [totalUnread, setTotalUnread] = useState(0);
+  const socketRef = useRef(null);
+
+  const { data, refetch } = useQuery(GET_MY_ROOMS, {
+    fetchPolicy: "network-only",
+  });
+
+  // hitung total message
+  useEffect(() => {
+    if (data?.myRooms) {
+      const unreadCount = data.myRooms.reduce(
+        (total, room) => total + (room.unreadCount || 0),
+        0
+      );
+      setTotalUnread(unreadCount);
+    }
+  }, [data]);
+
+  // setup Socket.io
+  useEffect(() => {
+    // ambil token dari localStorage
+    const token = localStorage.getItem("access_token");
+
+    // connect ke server socket.io
+    socketRef.current = io("http://localhost:4000/");
+
+    // kasihkan token ke socket.io
+    socketRef.current.emit("authenticate", token);
+
+    // listen ke new message
+    socketRef.current.on("new_message", () => {
+      // refetch rooms ketika ada pesan baru
+      refetch();
+    });
+
+    // Listen ke message notification
+    socketRef.current.on("message_notification", () => {
+      // refetch room ambil data terbaru dengan unread count
+      refetch();
+    });
+
+    // listen ke pesan yang sudah dibaca
+    socketRef.current.on("messages_read", () => {
+      refetch();
+    });
+
+    // hapus socket.io ketika component dihapus
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
+  }, [refetch]);
 
   const isActiveRoute = (path) => {
     return location.pathname === path;
@@ -22,7 +87,7 @@ const Navbar = () => {
 
   return (
     <>
-      {/* ketika di mobile dia di bawah seperti navigasi */}
+      {/* Mobile navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 sm:hidden z-10">
         <div className="flex justify-around items-center">
           <Link
@@ -62,7 +127,14 @@ const Navbar = () => {
             to="/chats"
             className={`flex flex-col items-center ${isActiveRoute("/chats") ? "text-primary" : "text-gray-500"}`}
           >
-            <MessageSquare size={20} />
+            <div className="relative">
+              <MessageSquare size={20} />
+              {totalUnread > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
+                  {totalUnread > 99 ? "99+" : totalUnread}
+                </span>
+              )}
+            </div>
             <span className="text-xs mt-1">Chats</span>
           </Link>
 
@@ -76,7 +148,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* ketika di desktop dia diatas */}
+      {/* Desktop navigation */}
       <div className="hidden sm:block fixed top-0 left-0 right-0 bg-white border-b border-gray-200 py-3 px-6 z-10">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <Link
@@ -110,9 +182,14 @@ const Navbar = () => {
             </Link>
             <Link
               to="/chats"
-              className={`${isActiveRoute("/chats") ? "text-primary" : "text-gray-700"} font-medium`}
+              className={`${isActiveRoute("/chats") ? "text-primary" : "text-gray-700"} relative font-medium`}
             >
               Chats
+              {totalUnread > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                  {totalUnread > 99 ? "99+" : totalUnread}
+                </span>
+              )}
             </Link>
             <Link
               to="/profile"
@@ -122,7 +199,7 @@ const Navbar = () => {
             </Link>
             <Link to="/cart" className="relative">
               <ShoppingCart
-                className={` text-xl ${isActiveRoute("/cart") ? "text-primary" : "text-gray-700"}`}
+                className={`text-xl ${isActiveRoute("/cart") ? "text-primary" : "text-gray-700"}`}
               />
               {totalItems > 0 && (
                 <span
