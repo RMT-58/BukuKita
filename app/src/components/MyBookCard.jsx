@@ -213,14 +213,35 @@ const MyBookCard = ({
             </div>
 
             <div className="flex mt-3 gap-2">
-              <button
+              {/* <button
                 onClick={handleEdit}
                 className="w-12 h-12 border border-[#00A8FF] text-[#00A8FF] rounded flex items-center justify-center"
                 aria-label="Edit book"
               >
                 <Edit size={18} />
-              </button>
+              </button> */}
 
+              <button
+                onClick={handleEdit}
+                disabled={book.status === "isClosed"}
+                className={`w-12 h-12 border ${
+                  book.status === "isClosed"
+                    ? "border-gray-400 text-gray-400 cursor-not-allowed"
+                    : "border-[#00A8FF] text-[#00A8FF]"
+                } rounded flex items-center justify-center`}
+                aria-label={
+                  book.status === "isClosed"
+                    ? "Cannot edit while rented"
+                    : "Edit book"
+                }
+                title={
+                  book.status === "isClosed"
+                    ? "Cannot edit while rented"
+                    : "Edit book"
+                }
+              >
+                <Edit size={18} />
+              </button>
               <button
                 onClick={handleDeleteClick}
                 className="w-12 h-12 border border-red-500 text-red-500 rounded flex items-center justify-center"

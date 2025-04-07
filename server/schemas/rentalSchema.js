@@ -23,7 +23,7 @@ export const typeDefs = `#graphql
 
   type RentalDetail {
     _id: ID!
-    book_id: String!
+    book_id: ID!
     price: Int!
     period: Int!
     total: Int!
@@ -34,7 +34,7 @@ export const typeDefs = `#graphql
     cover_type: String!
     thumbnail_url: String
     image_urls: [String]
-    rental_id: String!
+    rental_id: ID!
     rental_start: String!
     rental_end: String!
     created_at: String!
@@ -203,7 +203,8 @@ export const resolvers = {
   },
   Rental: {
     details: async (parent) => {
-      return await RentalDetail.findDetailsByRentalId(parent._id.toString());
+      const rentalIdString = parent._id.toString();
+      return await RentalDetail.findDetailsByRentalId(rentalIdString);
     },
   },
 };
