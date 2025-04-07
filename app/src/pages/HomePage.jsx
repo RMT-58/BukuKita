@@ -1,12 +1,4 @@
-import {
-  Search,
-  ShoppingCart,
-  ChevronDown,
-  X,
-  Filter,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { Search, ShoppingCart, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import BookCard from "../components/BookCard";
 import { Link } from "react-router";
@@ -95,15 +87,62 @@ const GET_MY_ROOMS = gql`
 `;
 
 // mendapaatkan semua genre buku
-const getAllGenres = (books) => {
-  const genreSet = new Set();
-  books.forEach((book) => {
-    if (book.genres) {
-      book.genres.forEach((genre) => genreSet.add(genre));
-    }
-  });
-  return Array.from(genreSet);
-};
+const genreOptions = [
+  "Fiction",
+  "Non-Fiction",
+  "Science Fiction",
+  "Fantasy",
+  "Mystery",
+  "Romance",
+  "Thriller",
+  "Horror",
+  "Biography",
+  "Autobiography",
+  "Memoir",
+  "History",
+  "Self-Help",
+  "Children",
+  "Young Adult",
+  "New Adult",
+  "Poetry",
+  "Comics",
+  "Graphic Novel",
+  "Art",
+  "Photography",
+  "Cooking",
+  "Travel",
+  "Religion",
+  "Spirituality",
+  "Science",
+  "Technology",
+  "Philosophy",
+  "Psychology",
+  "Education",
+  "Health",
+  "Wellness",
+  "Parenting",
+  "Business",
+  "Economics",
+  "Politics",
+  "Law",
+  "True Crime",
+  "Sports",
+  "Music",
+  "Drama",
+  "Satire",
+  "Anthology",
+  "Classic",
+  "Adventure",
+  "Dystopian",
+  "LGBTQ+",
+  "Environmental",
+  "Short Stories",
+  "Essays",
+  "Journal",
+  "Reference",
+  "Guide",
+  "Diary",
+];
 
 // mendapatkan semua cover type buku
 const getCoverTypes = (books) => {
@@ -145,7 +184,7 @@ const HomePage = () => {
           const pagination = data.findAll.pagination || {};
 
           setBooks(fetchedBooks);
-          setGenres(getAllGenres(fetchedBooks));
+          setGenres(genreOptions);
           setCoverTypes(getCoverTypes(fetchedBooks));
 
           setTotalPages(pagination.totalPages || 1);
@@ -170,7 +209,11 @@ const HomePage = () => {
       // filter object kosong
       const filters = {};
 
-      if (activeFilters.genres) {
+      if (
+        activeFilters.genres &&
+        Array.isArray(activeFilters.genres) &&
+        activeFilters.genres.length > 0
+      ) {
         filters.genres = activeFilters.genres;
       }
 
@@ -278,7 +321,11 @@ const HomePage = () => {
   };
 
   const hasActiveFilters =
-    Object.values(activeFilters).some((value) => value !== null) ||
+    (activeFilters.genres &&
+      Array.isArray(activeFilters.genres) &&
+      activeFilters.genres.length > 0) ||
+    activeFilters.cover_type !== null ||
+    activeFilters.status !== null ||
     minPrice !== null ||
     maxPrice !== null;
 

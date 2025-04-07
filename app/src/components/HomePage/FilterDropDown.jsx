@@ -1,4 +1,4 @@
-import { ChevronDown, X } from "lucide-react";
+import { ChevronDown, X, Check } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { PriceRangeFilter } from "./PriceRangeFilter";
 
@@ -13,6 +13,7 @@ export const FilterDropdown = ({
   minPrice,
   maxPrice,
   onPriceChange,
+  multiSelect = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -41,8 +42,28 @@ export const FilterDropdown = ({
   };
 
   const handleSelect = (option) => {
-    onSelect(option);
-    setIsOpen(false);
+    if (multiSelect) {
+      // If multiSelect is true, we handle arrays
+      const currentSelections = Array.isArray(activeOption)
+        ? [...activeOption]
+        : [];
+      const optionIndex = currentSelections.indexOf(option);
+
+      if (optionIndex >= 0) {
+        // Remove option if already selected
+        currentSelections.splice(optionIndex, 1);
+      } else {
+        // Add option if not already selected
+        currentSelections.push(option);
+      }
+
+      onSelect(currentSelections);
+      // Don't close dropdown for multi-select
+    } else {
+      // Single selection behavior
+      onSelect(option);
+      setIsOpen(false);
+    }
   };
 
   const priceLabel = () => {
@@ -57,6 +78,9 @@ export const FilterDropdown = ({
   };
 
   const hasActivePrice = minPrice || maxPrice;
+  const hasActiveOptions = Array.isArray(activeOption)
+    ? activeOption.length > 0
+    : Boolean(activeOption);
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -64,22 +88,34 @@ export const FilterDropdown = ({
         onClick={toggleDropdown}
         className={`
           flex items-center space-x-1 px-3 py-2 rounded-full text-sm transition-all duration-200
-          ${activeOption || hasActivePrice ? "bg-[#00A8FF] text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}
+          ${hasActiveOptions || hasActivePrice ? "bg-[#00A8FF] text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}
         `}
       >
         {icon && <span className="mr-1">{icon}</span>}
         <span>{label}</span>
+
         {isPriceFilter && hasActivePrice && (
           <span className="mx-1 text-xs bg-white/30 px-2 rounded-full">
             {priceLabel()}
           </span>
         )}
-        {!isPriceFilter && activeOption && (
+
+        {!isPriceFilter && !multiSelect && activeOption && (
           <span className="mx-1 text-xs bg-white/30 px-2 rounded-full">
             {activeOption}
           </span>
         )}
-        {activeOption || hasActivePrice ? (
+
+        {!isPriceFilter &&
+          multiSelect &&
+          Array.isArray(activeOption) &&
+          activeOption.length > 0 && (
+            <span className="mx-1 text-xs bg-white/30 px-2 rounded-full">
+              {activeOption.length}
+            </span>
+          )}
+
+        {hasActiveOptions || hasActivePrice ? (
           <X
             size={14}
             onClick={handleClear}
@@ -109,19 +145,43 @@ export const FilterDropdown = ({
               onChange={onPriceChange}
             />
           ) : (
-            options.map((option) => (
-              <button
-                key={option}
-                onClick={() => handleSelect(option)}
-                className={`
-                  w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors duration-150
-                  ${activeOption === option ? "bg-gray-100 text-[#00A8FF] font-medium" : "text-gray-700"}
-                `}
-              >
-                {option}
-              </button>
-            ))
+            options.map((option) => {
+              const isSelected = multiSelect
+                ? Array.isArray(activeOption) && activeOption.includes(option)
+                : activeOption === option;
+
+              return (
+                <button
+                  key={option}
+                  onClick={() => handleSelect(option)}
+                  className={`
+                    w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors duration-150 flex items-center justify-between
+                    ${isSelected ? "bg-gray-100 text-[#00A8FF] font-medium" : "text-gray-700"}
+                  `}
+                >
+                  <span>{option}</span>
+                  {multiSelect && isSelected && (
+                    <Check size={16} className="text-[#00A8FF]" />
+                  )}
+                </button>
+              );
+            })
           )}
+
+          {multiSelect &&
+            Array.isArray(activeOption) &&
+            activeOption.length > 0 && (
+              <div className="px-4 py-2 border-t">
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
+                  className="w-full py-1 bg-[#00A8FF] text-white rounded text-sm"
+                >
+                  Apply ({activeOption.length})
+                </button>
+              </div>
+            )}
         </div>
       )}
     </div>

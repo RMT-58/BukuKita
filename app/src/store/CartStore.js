@@ -270,10 +270,10 @@ export const useCartStore = create(
       },
 
       // rental period berdasarkan start date
-      calculateRentalPeriod: (startDate, periodDays) => {
+      calculateRentalPeriod: (startDate, daysPeriod) => {
         const startDateObj = new Date(startDate);
         const endDate = new Date(startDate);
-        endDate.setDate(startDateObj.getDate() + periodDays);
+        endDate.setDate(startDateObj.getDate() + daysPeriod * 7);
 
         return {
           start: startDateObj.toISOString(),

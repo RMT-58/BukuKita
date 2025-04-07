@@ -111,7 +111,6 @@ const CartPage = () => {
                   currency: "Rp",
                   period: book.period,
                   startDate: book.startDate,
-                  availablePeriod: `${book.period} days`,
                 }}
               />
             ))}

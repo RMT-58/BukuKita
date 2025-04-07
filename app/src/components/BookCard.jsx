@@ -268,7 +268,7 @@ const BookCard = ({ book, isHome }) => {
             <div className="text-right">
               <p className="text-sm text-gray-500">For rent</p>
               <p className="text-sm font-medium">
-                Rp {book.price?.toLocaleString() || 0} per day
+                Rp {book.price?.toLocaleString() || 0} per week
               </p>
             </div>
           </div>

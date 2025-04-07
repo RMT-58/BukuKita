@@ -15,7 +15,7 @@ const CartItemCard = ({ item }) => {
 
   const today = new Date().toISOString().split("T")[0];
 
-  // maksimal pinjam 3 bulan
+  // maksimal pinjam 3 bulan (12 weeks)
   const maxDate = new Date();
   maxDate.setMonth(maxDate.getMonth() + 3);
   const maxDateString = maxDate.toISOString().split("T")[0];
@@ -29,7 +29,8 @@ const CartItemCard = ({ item }) => {
     if (!item.startDate) return "";
     const startDate = new Date(item.startDate);
     const endDate = new Date(startDate);
-    endDate.setDate(startDate.getDate() + item.period);
+    // Calculate end date by adding weeks instead of days
+    endDate.setDate(startDate.getDate() + item.period * 7);
     return endDate.toISOString().split("T")[0];
   };
 
@@ -68,7 +69,9 @@ const CartItemCard = ({ item }) => {
             <p className="text-xs text-gray-500">
               Period:{" "}
               <span className="text-gray-700">
-                {item.availablePeriod || `${item.period} days`}
+                {item.period > 1
+                  ? `${item.period} weeks`
+                  : `${item.period} week`}
               </span>
             </p>
           </div>
@@ -108,7 +111,11 @@ const CartItemCard = ({ item }) => {
               >
                 <Minus size={16} />
               </button>
-              <span className="px-3">{item.period}</span>
+              <span className="px-3">
+                {item.period > 1
+                  ? `${item.period} weeks`
+                  : `${item.period} week`}
+              </span>
               <button
                 onClick={() => updatePeriod(item._id, item.period + 1)}
                 className="px-2 py-1 bg-gray-100"

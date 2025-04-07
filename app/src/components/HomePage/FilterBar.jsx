@@ -4,7 +4,6 @@ import { Filter, X } from "lucide-react";
 import { FilterBadge } from "./FilterBadge";
 import { PriceRangeFilter } from "./PriceRangeFilter";
 
-// filter bar
 export const FilterBar = ({
   genres,
   coverTypes,
@@ -23,7 +22,7 @@ export const FilterBar = ({
 
   return (
     <>
-      {/* Desktop filter bar */}
+      {/* Desktop  */}
       <div className="hidden md:flex flex-wrap items-center gap-2 mb-6">
         <FilterBadge
           label="All"
@@ -36,18 +35,11 @@ export const FilterBar = ({
           label="Genre"
           options={genres}
           activeOption={activeFilters.genres}
-          onSelect={(value) => handleFilterChange("genres", [value])}
+          onSelect={(value) => handleFilterChange("genres", value)}
           onClear={() => clearFilter("genres")}
           icon={<Filter size={14} />}
+          multiSelect={true}
         />
-
-        {/* <FilterDropdown
-          label="Cover"
-          options={coverTypes}
-          activeOption={activeFilters.cover_type}
-          onSelect={(value) => handleFilterChange("cover_type", value)}
-          onClear={() => clearFilter("cover_type")}
-        /> */}
 
         <FilterDropdown
           label="Cover"
@@ -106,7 +98,7 @@ export const FilterBar = ({
         )}
       </div>
 
-      {/* Mobile filter bar */}
+      {/* Mobile */}
       <div className="md:hidden flex items-center gap-2 mb-6 overflow-x-auto pb-2">
         <button
           onClick={() => setShowFilterPanel(!showFilterPanel)}
@@ -132,16 +124,18 @@ export const FilterBar = ({
           onClick={clearAllFilters}
         />
 
-        {activeFilters.genres && (
-          <div className="flex items-center bg-[#00A8FF] text-white px-3 py-1.5 rounded-full text-sm">
-            <span>{activeFilters.genres[0]}</span>
-            <X
-              size={14}
-              className="ml-1 cursor-pointer"
-              onClick={() => clearFilter("genres")}
-            />
-          </div>
-        )}
+        {activeFilters.genres &&
+          Array.isArray(activeFilters.genres) &&
+          activeFilters.genres.length > 0 && (
+            <div className="flex items-center bg-[#00A8FF] text-white px-3 py-1.5 rounded-full text-sm">
+              <span>Genres ({activeFilters.genres.length})</span>
+              <X
+                size={14}
+                className="ml-1 cursor-pointer"
+                onClick={() => clearFilter("genres")}
+              />
+            </div>
+          )}
 
         {activeFilters.cover_type && (
           <div className="flex items-center bg-[#00A8FF] text-white px-3 py-1.5 rounded-full text-sm">
@@ -208,20 +202,41 @@ export const FilterBar = ({
             <div>
               <p className="text-sm text-gray-500 mb-2">Genre</p>
               <div className="flex flex-wrap gap-2">
-                {genres.map((genre) => (
-                  <button
-                    key={genre}
-                    onClick={() => handleFilterChange("genres", [genre])}
-                    className={`px-3 py-1 rounded-full text-sm ${
-                      activeFilters.genres &&
-                      activeFilters.genres.includes(genre)
-                        ? "bg-[#00A8FF] text-white"
-                        : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    {genre}
-                  </button>
-                ))}
+                {genres.map((genre) => {
+                  const isSelected =
+                    Array.isArray(activeFilters.genres) &&
+                    activeFilters.genres.includes(genre);
+
+                  return (
+                    <button
+                      key={genre}
+                      onClick={() => {
+                        const currentGenres = Array.isArray(
+                          activeFilters.genres
+                        )
+                          ? [...activeFilters.genres]
+                          : [];
+
+                        const genreIndex = currentGenres.indexOf(genre);
+
+                        if (genreIndex >= 0) {
+                          currentGenres.splice(genreIndex, 1);
+                        } else {
+                          currentGenres.push(genre);
+                        }
+
+                        handleFilterChange("genres", currentGenres);
+                      }}
+                      className={`px-3 py-1 rounded-full text-sm ${
+                        isSelected
+                          ? "bg-[#00A8FF] text-white"
+                          : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {genre}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

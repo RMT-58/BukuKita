@@ -88,7 +88,11 @@ const RentalDetailsModal = ({ rental, isOpen, onClose, formatDate }) => {
                         <div className="mt-2 text-sm">
                           <div className="flex justify-between">
                             <span>Rental Period:</span>
-                            <span>{detail.period} days</span>
+                            <span>
+                              {detail.period > 1
+                                ? `${detail.period} weeks`
+                                : `${detail.period} week`}
+                            </span>
                           </div>
                           <div className="flex justify-between">
                             <span>Start Date:</span>

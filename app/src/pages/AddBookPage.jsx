@@ -68,17 +68,51 @@ const genreOptions = [
   "Thriller",
   "Horror",
   "Biography",
+  "Autobiography",
+  "Memoir",
   "History",
   "Self-Help",
   "Children",
   "Young Adult",
+  "New Adult",
   "Poetry",
   "Comics",
+  "Graphic Novel",
   "Art",
+  "Photography",
   "Cooking",
   "Travel",
   "Religion",
+  "Spirituality",
   "Science",
+  "Technology",
+  "Philosophy",
+  "Psychology",
+  "Education",
+  "Health",
+  "Wellness",
+  "Parenting",
+  "Business",
+  "Economics",
+  "Politics",
+  "Law",
+  "True Crime",
+  "Sports",
+  "Music",
+  "Drama",
+  "Satire",
+  "Anthology",
+  "Classic",
+  "Adventure",
+  "Dystopian",
+  "LGBTQ+",
+  "Environmental",
+  "Short Stories",
+  "Essays",
+  "Journal",
+  "Reference",
+  "Guide",
+  "Diary",
 ];
 
 function AddBookPage() {
@@ -402,7 +436,7 @@ function AddBookPage() {
                   htmlFor="price"
                   className="block text-sm font-medium mb-1"
                 >
-                  Price / day
+                  Price / week
                 </label>
                 <div className="relative flex items-center">
                   <span

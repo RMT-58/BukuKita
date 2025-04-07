@@ -564,7 +564,7 @@ const PublicPage = () => {
                         <span className="text-gray-600 text-sm ml-1">(42)</span>
                       </div>
                       <span className="font-bold text-green-600">
-                        Rp. {book.price}/day
+                        Rp. {book.price}/week
                       </span>
                     </div>
                   </div>

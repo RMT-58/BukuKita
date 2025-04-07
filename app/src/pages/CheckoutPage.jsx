@@ -138,7 +138,9 @@ const CheckoutPage = () => {
                 <div>
                   <p className="font-medium">{book.title}</p>
                   <p className="text-sm text-gray-500">
-                    {book.period} days rental
+                    {book.period === 1
+                      ? "1 week rental"
+                      : `${book.period} weeks rental`}
                   </p>
                 </div>
               </div>
