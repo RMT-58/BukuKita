@@ -291,7 +291,7 @@ const BookCard = ({ book, isHome }) => {
                   book.status === "isClosed"
                     ? "bg-gray-400 cursor-not-allowed"
                     : "bg-[#00A8FF]"
-                } text-white rounded flex items-center justify-center gap-2 py-2`}
+                } text-white h-12 rounded flex items-center justify-center gap-2 py-2`}
               >
                 <Edit size={18} />
                 {book.status === "isClosed" ? "Currently Rented" : "Edit Book"}

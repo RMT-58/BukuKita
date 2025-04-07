@@ -20,7 +20,10 @@ export default class Book {
       sortOrder,
     } = params;
 
-    // Build match query
+    // Create a separate variable to hold status filter
+    const statusFilter = filters.status;
+
+    // Build match query without status
     let matchStage = {};
 
     // SEARCH CONDITION
@@ -32,11 +35,7 @@ export default class Book {
       ];
     }
 
-    // FILTERS
-    if (filters.status) {
-      matchStage.status = filters.status;
-    }
-
+    // FILTERS (excluding status)
     if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
       matchStage.price = {};
       if (filters.minPrice !== undefined) {
@@ -73,7 +72,7 @@ export default class Book {
 
     // pipelinenya
     const pipeline = [
-      // disuruh match criteria dulu
+      // Match criteria dulu (tanpa status)
       { $match: matchStage },
 
       // lookup rental details
@@ -123,22 +122,9 @@ export default class Book {
       // cek bukunya ada apa unavailable
       {
         $addFields: {
-          isUnavailable: {
+          effectiveStatus: {
             $cond: {
               if: { $gt: [{ $size: "$completedRentals" }, 0] },
-              then: true,
-              else: false,
-            },
-          },
-        },
-      },
-
-      // update statusnya kalau unavailable
-      {
-        $addFields: {
-          status: {
-            $cond: {
-              if: "$isUnavailable",
               then: "isClosed",
               else: "$status",
             },
@@ -146,13 +132,31 @@ export default class Book {
         },
       },
 
-      // project  temp fields
+      // Apply status filter AFTER calculating effective status
+      ...(statusFilter
+        ? [
+            {
+              $match: {
+                effectiveStatus: statusFilter,
+              },
+            },
+          ]
+        : []),
+
+      // update actual status field to reflect effective status
+      {
+        $addFields: {
+          status: "$effectiveStatus",
+        },
+      },
+
+      // project temp fields
       {
         $project: {
           rentalDetails: 0,
           activeRentalDetails: 0,
           completedRentals: 0,
-          isUnavailable: 0,
+          effectiveStatus: 0,
         },
       },
 
@@ -166,10 +170,71 @@ export default class Book {
       { $limit: limit },
     ];
 
-    // get totalnya
-    const countPipeline = [{ $match: matchStage }, { $count: "totalCount" }];
+    // TAMBAHIN FILTER KALO KATA AI, BELAKANGAN
+    const countPipeline = [
+      { $match: matchStage },
+      {
+        $lookup: {
+          from: "rentalDetails",
+          localField: "_id",
+          foreignField: "book_id",
+          as: "rentalDetails",
+        },
+      },
+      {
+        $addFields: {
+          activeRentalDetails: {
+            $filter: {
+              input: "$rentalDetails",
+              as: "detail",
+              cond: { $gte: ["$$detail.rental_end", currentDate] },
+            },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "rentals",
+          let: { rentalIds: "$activeRentalDetails.rental_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $in: ["$_id", "$$rentalIds"] },
+                    { $eq: ["$status", "completed"] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "completedRentals",
+        },
+      },
+      {
+        $addFields: {
+          effectiveStatus: {
+            $cond: {
+              if: { $gt: [{ $size: "$completedRentals" }, 0] },
+              then: "isClosed",
+              else: "$status",
+            },
+          },
+        },
+      },
+      ...(statusFilter
+        ? [
+            {
+              $match: {
+                effectiveStatus: statusFilter,
+              },
+            },
+          ]
+        : []),
+      { $count: "totalCount" },
+    ];
 
-    // diGAS YAGESYA
+    // DIGAS YAGESYA
     const [countResult, books] = await Promise.all([
       collection.aggregate(countPipeline).toArray(),
       collection.aggregate(pipeline).toArray(),
