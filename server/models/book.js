@@ -68,15 +68,15 @@ export default class Book {
       sortOptions = { [sortField]: sortOrder || -1 };
     }
 
-    // Get current date for availability check
+    // TANGGAL SEKARANG
     const currentDate = new Date();
 
-    // Build the aggregation pipeline
+    // pipelinenya
     const pipeline = [
-      // Stage 1: Match criteria
+      // disuruh match criteria dulu
       { $match: matchStage },
 
-      // Stage 2: Lookup rental details
+      // lookup rental details
       {
         $lookup: {
           from: "rentalDetails",
@@ -86,7 +86,7 @@ export default class Book {
         },
       },
 
-      // Stage 3: Filter rentalDetails to only active ones
+      // filter rentalDetails ke yang aktif
       {
         $addFields: {
           activeRentalDetails: {
@@ -99,7 +99,7 @@ export default class Book {
         },
       },
 
-      // Stage 4: Lookup rentals for the active rental details
+      // lookup rental buat active rental details
       {
         $lookup: {
           from: "rentals",
@@ -120,7 +120,7 @@ export default class Book {
         },
       },
 
-      // Stage 5: Determine if book is unavailable
+      // cek bukunya ada apa unavailable
       {
         $addFields: {
           isUnavailable: {
@@ -133,7 +133,7 @@ export default class Book {
         },
       },
 
-      // Stage 6: Update status if unavailable
+      // update statusnya kalau unavailable
       {
         $addFields: {
           status: {
@@ -146,7 +146,7 @@ export default class Book {
         },
       },
 
-      // Stage 7: Project out temporary fields
+      // project  temp fields
       {
         $project: {
           rentalDetails: 0,
@@ -156,20 +156,20 @@ export default class Book {
         },
       },
 
-      // Stage 8: Sort
+      // sort
       { $sort: sortOptions },
 
-      // Stage 9: Skip for pagination
+      // skip buat pagination
       { $skip: skip },
 
-      // Stage 10: Limit results
+      // limit res
       { $limit: limit },
     ];
 
-    // Get total count for pagination
+    // get totalnya
     const countPipeline = [{ $match: matchStage }, { $count: "totalCount" }];
 
-    // Execute both pipelines
+    // diGAS YAGESYA
     const [countResult, books] = await Promise.all([
       collection.aggregate(countPipeline).toArray(),
       collection.aggregate(pipeline).toArray(),
@@ -279,10 +279,8 @@ export default class Book {
     const currentDate = new Date();
 
     const pipeline = [
-      // Stage 1: Match the specific book by ID
       { $match: { _id } },
 
-      // Stage 2: Lookup rental details
       {
         $lookup: {
           from: "rentalDetails",
@@ -292,7 +290,6 @@ export default class Book {
         },
       },
 
-      // Stage 3: Filter rentalDetails to only active ones
       {
         $addFields: {
           activeRentalDetails: {
@@ -305,7 +302,6 @@ export default class Book {
         },
       },
 
-      // Stage 4: Lookup rentals for the active rental details
       {
         $lookup: {
           from: "rentals",
@@ -326,7 +322,6 @@ export default class Book {
         },
       },
 
-      // Stage 5: Determine if book is unavailable
       {
         $addFields: {
           isUnavailable: {
@@ -339,7 +334,6 @@ export default class Book {
         },
       },
 
-      // Stage 6: Update status if unavailable
       {
         $addFields: {
           status: {
@@ -352,7 +346,6 @@ export default class Book {
         },
       },
 
-      // Stage 7: Project out temporary fields
       {
         $project: {
           rentalDetails: 0,
