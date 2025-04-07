@@ -11,9 +11,10 @@ import {
   Phone,
   MapPin,
   Banknote,
+  Edit,
 } from "lucide-react";
 import { useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useParams, useNavigate } from "react-router";
 import logo from "../assets/logo.png";
 
 import { useQuery, gql } from "@apollo/client";
@@ -51,21 +52,48 @@ const FIND_BOOK_BY_ID = gql`
   }
 `;
 
+const GET_CURRENT_USER = gql`
+  query Me {
+    me {
+      _id
+      name
+      username
+      phone_number
+      address
+      created_at
+      updated_at
+    }
+  }
+`;
+
 function BookDetailPage() {
   const { bookId } = useParams();
   const [activeImage, setActiveImage] = useState(0);
+  const navigate = useNavigate();
 
   const { loading, error, data } = useQuery(FIND_BOOK_BY_ID, {
     variables: { findBookByIdId: bookId },
   });
 
+  // Get current logged in user
+  const { data: userData } = useQuery(GET_CURRENT_USER, {
+    fetchPolicy: "no-cache",
+  });
+
   const book = data?.findBookById;
+
+  // Check if current user is the book owner
+  const isBookOwner = userData?.me?._id === book?.uploaded_by?._id;
 
   const addToCart = useCartStore((state) => state.addToCart);
 
   const handleAddToCart = () => {
     addToCart(book._id);
     toast.success("Book added to cart!");
+  };
+
+  const handleEditBook = () => {
+    navigate(`/edit-book/${book._id}`);
   };
 
   const formatPrice = (price) => {
@@ -239,13 +267,23 @@ function BookDetailPage() {
                 </div>
               )}
 
-              <button
-                disabled={book.status !== "forRent"}
-                onClick={handleAddToCart}
-                className={`w-full ${book.status !== "forRent" ? "bg-gray-400" : "bg-primary hover:bg-primary/90"} text-white py-3 rounded-md font-medium transition-colors`}
-              >
-                {`${book.status !== "forRent" ? "Not Available yet!" : "Add Rent Period to Cart"}`}
-              </button>
+              {isBookOwner ? (
+                <button
+                  onClick={handleEditBook}
+                  className="w-full bg-primary hover:bg-primary/90 text-white py-3 rounded-md font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <Edit size={18} />
+                  Edit Book
+                </button>
+              ) : (
+                <button
+                  disabled={book.status !== "forRent"}
+                  onClick={handleAddToCart}
+                  className={`w-full ${book.status !== "forRent" ? "bg-gray-400" : "bg-primary hover:bg-primary/90"} text-white py-3 rounded-md font-medium transition-colors`}
+                >
+                  {`${book.status !== "forRent" ? "Not Available yet!" : "Add Rent Period to Cart"}`}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -265,7 +303,12 @@ function BookDetailPage() {
                 <User size={24} />
               </div>
               <div>
-                <p className="font-medium">{book.uploaded_by.name}</p>
+                <p className="font-medium">
+                  {book.uploaded_by.name}{" "}
+                  <span className="font-light">
+                    {isBookOwner ? "(You)" : ""}
+                  </span>
+                </p>
                 <p className="text-gray-500 text-sm">
                   @{book.uploaded_by.username}
                 </p>

@@ -1,24 +1,11 @@
-import { Image, Star } from "lucide-react";
-import React, { useState } from "react";
+import { Edit, Image, Star } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import BookPhotosModal from "./BookPhotosModal";
-import { gql, useQuery, useMutation, useLazyQuery } from "@apollo/client";
+import { gql, useMutation, useLazyQuery } from "@apollo/client";
 import { toast, Toaster } from "react-hot-toast";
 import { useCartStore } from "../store/CartStore";
-
-const GET_CURRENT_USER = gql`
-  query Me {
-    me {
-      _id
-      name
-      username
-      phone_number
-      address
-      created_at
-      updated_at
-    }
-  }
-`;
+import { useUserStore } from "../store/UserStore";
 
 const FIND_ROOMS_BY_USER_ID = gql`
   query FindRoomsByUserId($userId: String!) {
@@ -65,6 +52,7 @@ const SEND_MESSAGE = gql`
 
 const BookCard = ({ book, isHome }) => {
   const addToCart = useCartStore((state) => state.addToCart);
+  const { user, fetchUser, isOwner } = useUserStore();
 
   const handleAddToCart = () => {
     addToCart(book._id);
@@ -74,10 +62,14 @@ const BookCard = ({ book, isHome }) => {
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const navigate = useNavigate();
 
-  // ambil user yang login
-  const { data: userData } = useQuery(GET_CURRENT_USER, {
-    fetchPolicy: "no-cache",
-  });
+  useEffect(() => {
+    // Fetch user data
+    if (!user) {
+      fetchUser();
+    }
+  }, [user, fetchUser]);
+
+  const isBookOwner = isOwner(book.uploaded_by?._id);
 
   const [findRooms, { data: roomsData }] = useLazyQuery(FIND_ROOMS_BY_USER_ID, {
     fetchPolicy: "network-only",
@@ -94,13 +86,13 @@ const BookCard = ({ book, isHome }) => {
         return;
       }
 
-      if (!userData || !userData.me || !userData.me._id) {
+      if (!user || !user.me || !user.me._id) {
         // jika belum login, redirect ke halaman login
         navigate("/login");
         return;
       }
 
-      const currentUserId = userData.me._id;
+      const currentUserId = user.me._id;
       const uploaderId = book.uploaded_by._id;
 
       // tidak boleh chat dengan diri sendiri
@@ -282,42 +274,54 @@ const BookCard = ({ book, isHome }) => {
           </div>
 
           <div className="flex mt-3 gap-2">
-            <button
-              onClick={handleChatOwner}
-              className="w-12 h-12 border border-[#00A8FF] text-[#00A8FF] rounded flex items-center justify-center"
-            >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M8 10H8.01M12 10H12.01M16 10H16.01M9 16H5C3.89543 16 3 15.1046 3 14V6C3 4.89543 3.89543 4 5 4H19C20.1046 4 21 4.89543 21 6V14C21 15.1046 20.1046 16 19 16H14L9 21V16Z"
-                  stroke="#00A8FF"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-
-            {isHome ? (
+            {isBookOwner ? (
               <button
-                disabled={book.status !== "forRent"}
-                onClick={handleAddToCart}
-                className={`flex-1 ${book.status !== "forRent" ? "bg-gray-400" : "bg-primary hover:bg-primary/90"} text-white rounded flex items-center justify-center py-2`}
+                onClick={() => navigate(`/edit-book/${book._id}`)}
+                className="flex-1 bg-[#00A8FF] text-white rounded flex items-center justify-center gap-2 py-2"
               >
-                {`${book.status !== "forRent" ? "Not Available yet!" : "Add Rent Period to Cart"}`}
+                <Edit size={18} />
+                Edit Book
               </button>
             ) : (
-              <Link
-                to={`/book/${book._id}`}
-                className="flex-1 bg-[#00A8FF] text-white rounded flex items-center justify-center py-2"
-              >
-                View Details
-              </Link>
+              <>
+                <button
+                  onClick={handleChatOwner}
+                  className="w-12 h-12 border border-[#00A8FF] text-[#00A8FF] rounded flex items-center justify-center"
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M8 10H8.01M12 10H12.01M16 10H16.01M9 16H5C3.89543 16 3 15.1046 3 14V6C3 4.89543 3.89543 4 5 4H19C20.1046 4 21 4.89543 21 6V14C21 15.1046 20.1046 16 19 16H14L9 21V16Z"
+                      stroke="#00A8FF"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+
+                {isHome ? (
+                  <button
+                    disabled={book.status !== "forRent"}
+                    onClick={handleAddToCart}
+                    className={`flex-1 ${book.status !== "forRent" ? "bg-gray-400" : "bg-primary hover:bg-primary/90"} text-white rounded flex items-center justify-center py-2`}
+                  >
+                    {`${book.status !== "forRent" ? "Not Available yet!" : "Add Rent Period to Cart"}`}
+                  </button>
+                ) : (
+                  <Link
+                    to={`/book/${book._id}`}
+                    className="flex-1 bg-[#00A8FF] text-white rounded flex items-center justify-center py-2"
+                  >
+                    View Details
+                  </Link>
+                )}
+              </>
             )}
           </div>
         </div>

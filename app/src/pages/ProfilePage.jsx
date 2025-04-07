@@ -3,6 +3,7 @@ import { User, Settings, LogOut } from "lucide-react";
 import { useNavigate } from "react-router";
 import { gql, useQuery } from "@apollo/client";
 import logo from "../assets/logo.png";
+import { useUserStore } from "../store/UserStore";
 
 const GET_PROFILE = gql`
   query Me {
@@ -86,6 +87,8 @@ const GET_MY_RENTALS = gql`
 const ProfilePage = () => {
   const navigate = useNavigate();
 
+  const { clearUser } = useUserStore();
+
   const {
     loading: loadingProfile,
     error: errorProfile,
@@ -121,6 +124,7 @@ const ProfilePage = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("access_token");
+    clearUser();
     navigate("/public");
   };
 

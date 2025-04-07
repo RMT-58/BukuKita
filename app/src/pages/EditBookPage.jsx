@@ -1,8 +1,9 @@
 import { ArrowLeft, Upload, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { toast, Toaster } from "react-hot-toast";
+import { toast } from "react-hot-toast";
 import { gql, useMutation, useQuery } from "@apollo/client";
+import { useUserStore } from "../store/UserStore";
 
 const GET_IMAGEKIT_AUTH_PARAMS = gql`
   mutation GetImageKitAuthParams {
@@ -114,7 +115,11 @@ const genreOptions = [
 
 function EditBookPage() {
   const navigate = useNavigate();
+  const [ownerId, setOwnerId] = useState("");
   const { id } = useParams();
+
+  const { isOwner } = useUserStore();
+  const isBookOwner = isOwner(ownerId);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -171,6 +176,8 @@ function EditBookPage() {
           status: book.status || "",
           genres: Array.isArray(book.genres) ? book.genres : [],
         });
+
+        setOwnerId(book.uploader_id);
 
         if (book.thumbnail_url) {
           setThumbnailPreview(book.thumbnail_url);
@@ -426,7 +433,6 @@ function EditBookPage() {
       });
 
       toast.dismiss(loadingToast);
-      toast.success("Book updated successfully! Redirecting...");
       navigate("/library");
     } catch (err) {
       console.error("Error updating book:", err);
@@ -718,17 +724,20 @@ function EditBookPage() {
                   </button>
                 </div>
               ))}
-              <label className="h-32 bg-gray-100 rounded-md border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer">
-                <Plus size={24} className="text-gray-400 mb-1" />
-                <p className="text-xs text-gray-500 text-center">Add image</p>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAdditionalImagesChange}
-                  className="hidden"
-                  multiple
-                />
-              </label>
+              {isBookOwner && (
+                <label className="h-32 bg-gray-100 rounded-md border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer">
+                  <Plus size={24} className="text-gray-400 mb-1" />
+                  <p className="text-xs text-gray-500 text-center">Add image</p>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAdditionalImagesChange}
+                    className="hidden"
+                    multiple
+                    disabled={!isBookOwner}
+                  />
+                </label>
+              )}
             </div>
           </div>
 
@@ -743,12 +752,20 @@ function EditBookPage() {
 
             <button
               type="submit"
-              disabled={updateLoading}
-              className={`flex-1 bg-[#00A8FF] hover:bg-[#0096e0] text-white py-3 rounded-md font-medium ${
-                updateLoading ? "opacity-70 cursor-not-allowed" : ""
+              disabled={updateLoading || !isBookOwner}
+              className={`flex-1 ${
+                !isBookOwner ? "bg-gray-400" : "bg-[#00A8FF] hover:bg-[#0096e0]"
+              } text-white py-3 rounded-md font-medium ${
+                updateLoading || !isBookOwner
+                  ? "opacity-70 cursor-not-allowed"
+                  : ""
               }`}
             >
-              {updateLoading ? "Updating..." : "Save Changes"}
+              {updateLoading
+                ? "Updating..."
+                : !isBookOwner
+                  ? "You are not the book owner"
+                  : "Save Changes"}
             </button>
           </div>
         </form>
