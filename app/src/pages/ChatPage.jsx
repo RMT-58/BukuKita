@@ -60,38 +60,31 @@ const ChatPage = () => {
   const socketRef = useRef(null);
   const [notificationSound] = useState(new Audio("/notification.mp3"));
 
-  // Query to get current user
+  //GET current user
   const { data: userData } = useQuery(GET_CURRENT_USER, {
     fetchPolicy: "no-cache",
   });
 
-  // Query to get chat rooms
+  // GET CHAT ROOMS
   const { loading, error, data, refetch } = useQuery(GET_MY_ROOMS, {
     fetchPolicy: "network-only",
   });
 
-  // Initialize Socket.IO connection
+  // INIT SOCKET
   useEffect(() => {
-    // Get token from localStorage
     const token = localStorage.getItem("access_token");
 
-    // Connect to Socket.IO server (now on the same port as GraphQL)
     socketRef.current = io("http://localhost:4000/");
 
-    // Authenticate with token
     socketRef.current.emit("authenticate", token);
 
-    // Listen for new messages
     socketRef.current.on("new_message", () => {
-      // Refetch rooms to get the latest data
       refetch();
     });
 
-    // Listen for message notifications
     socketRef.current.on("message_notification", (data) => {
       console.log("Received message notification:", data);
 
-      // Play notification sound
       try {
         notificationSound
           .play()
@@ -100,17 +93,13 @@ const ChatPage = () => {
         console.log("Error playing notification sound:", e);
       }
 
-      // Refetch rooms to get the latest data
       refetch();
     });
 
-    // Listen for messages being marked as read
     socketRef.current.on("messages_read", () => {
-      // Refetch rooms to update unread counts
       refetch();
     });
 
-    // Cleanup on unmount
     return () => {
       if (socketRef.current) {
         socketRef.current.disconnect();
@@ -118,27 +107,25 @@ const ChatPage = () => {
     };
   }, [refetch, notificationSound]);
 
-  // Process chat rooms data
+  // CHATROOM DATA DIPROSES
   useEffect(() => {
     if (data?.myRooms && userData?.me) {
       const currentUserId = userData.me._id;
 
       const processedRooms = data.myRooms.map((room) => {
-        // Sort chats by date (newest first)
+        // SORT chat
         const sortedChats = [...(room.chats || [])].sort((a, b) => {
           const dateA = new Date(Number(a.created_at) || a.created_at);
           const dateB = new Date(Number(b.created_at) || b.created_at);
           return dateB - dateA;
         });
 
-        // Get the last message
+        // message terakhir
         const lastMessage = sortedChats[0] || null;
 
-        // Determine the chat partner (the other user in the conversation)
         const chatPartner =
           room.user_id === currentUserId ? room.receiver : room.user;
 
-        // Get unread count from the room data
         const unreadCount = room.unreadCount || 0;
 
         return {
@@ -166,7 +153,7 @@ const ChatPage = () => {
     }
   }, [data, userData]);
 
-  // Filter chats based on search query
+  // filter chats dari search query
   const filteredChats = chatRooms.filter((chat) =>
     chat.user.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
