@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, gql, useMutation } from "@apollo/client";
 import MyBookCard from "../components/MyBookCard";
 import RentalDetailsModal from "../components/RentalDetailsModal";
+import { useSearchParams } from "react-router";
+import { useNavigate } from "react-router";
 
 const GET_MY_BOOKS = gql`
   query MyBooks {
@@ -46,6 +48,8 @@ const GET_MY_RENTALS = gql`
       paid_date
       created_at
       updated_at
+      token
+      redirect_url
       details {
         _id
         book_id
@@ -108,6 +112,56 @@ const LibraryPage = () => {
 
   const [updateBook] = useMutation(UPDATE_BOOK);
   const [deleteBook] = useMutation(DELETE_BOOK);
+
+  const [searchParams] = useSearchParams();
+  const paymentStatus = searchParams.get("payment");
+  const [statusMessage, setStatusMessage] = useState(null);
+  const navigate = useNavigate();
+
+  const handlePayNow = (rental) => {
+    navigate(`/payment?token=${rental.token}&rental_id=${rental._id}`);
+  };
+
+  useEffect(() => {
+    if (paymentStatus) {
+      switch (paymentStatus) {
+        case "success":
+          setStatusMessage({
+            type: "success",
+            message: "Payment completed successfully!",
+          });
+          break;
+        case "pending":
+          setStatusMessage({
+            type: "warning",
+            message:
+              "Payment is pending. We'll update your rental once it's confirmed.",
+          });
+          break;
+        case "failed":
+          setStatusMessage({
+            type: "error",
+            message: "Payment failed. Please try again or contact support.",
+          });
+          break;
+        case "cancelled":
+          setStatusMessage({
+            type: "info",
+            message: "Payment was cancelled.",
+          });
+          break;
+        default:
+          setStatusMessage(null);
+      }
+
+      // Clear message after 5 seconds
+      const timer = setTimeout(() => {
+        setStatusMessage(null);
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [paymentStatus]);
 
   const {
     loading: loadingBooks,
@@ -240,6 +294,21 @@ const LibraryPage = () => {
         <h1 className="text-xl font-bold">Library</h1>
       </header>
       <div className="p-4 max-w-4xl mx-auto">
+        {statusMessage && (
+          <div
+            className={`mb-4 p-3 rounded ${
+              statusMessage.type === "success"
+                ? "bg-green-50 text-green-700"
+                : statusMessage.type === "warning"
+                  ? "bg-yellow-50 text-yellow-700"
+                  : statusMessage.type === "error"
+                    ? "bg-red-50 text-red-700"
+                    : "bg-blue-50 text-blue-700"
+            }`}
+          >
+            {statusMessage.message}
+          </div>
+        )}
         <div className="relative mb-6">
           <input
             type="text"
@@ -330,7 +399,7 @@ const LibraryPage = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {activeTab === "mybooks"
+            {/* {activeTab === "mybooks"
               ? filteredBooks.map((book) => (
                   <MyBookCard
                     key={book._id}
@@ -384,6 +453,73 @@ const LibraryPage = () => {
                       >
                         View Details
                       </button>
+                    </div>
+                  </div>
+                ))} */}
+            {activeTab === "mybooks"
+              ? filteredBooks.map((book) => (
+                  <MyBookCard
+                    key={book._id}
+                    book={book}
+                    onUpdateStatus={updateBook}
+                    onDeleteStatus={deleteBook}
+                    onDeleteSuccess={handleDeleteSuccess}
+                  />
+                ))
+              : filteredRentals.map((rental) => (
+                  <div
+                    key={rental._id}
+                    className="bg-white rounded-lg shadow p-4"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="font-medium">
+                          Order #{rental._id.substring(rental._id.length - 6)}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {formatDate(rental.created_at)}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            rental.status === "completed"
+                              ? "bg-green-100 text-green-800"
+                              : rental.status === "pending"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {rental.status.charAt(0).toUpperCase() +
+                            rental.status.slice(1)}
+                        </div>
+                        <div className="font-semibold">
+                          Rp {rental.total_amount.toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex justify-between items-center">
+                      <div className="text-sm">
+                        <span className="text-gray-500">Books: </span>
+                        {rental.details && rental.details.length} items
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {rental.status === "pending" && rental.token && (
+                          <button
+                            onClick={() => handlePayNow(rental)}
+                            className="text-white bg-[#00A8FF] px-3 py-1 text-sm font-medium rounded-full hover:bg-blue-600 transition-colors"
+                          >
+                            Pay Now
+                          </button>
+                        )}
+                        <button
+                          onClick={() => openRentalDetails(rental)}
+                          className="text-[#00A8FF] text-sm font-medium hover:underline"
+                        >
+                          View Details
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

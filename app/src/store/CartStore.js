@@ -284,7 +284,7 @@ export const useCartStore = create(
       },
 
       // prosess checkout nanti tambahkan payment method midtrans
-      checkout: async (userId, paymentMethod = "Not added yet") => {
+      checkout: async (userId) => {
         const {
           setLoading,
           setError,
@@ -305,12 +305,11 @@ export const useCartStore = create(
             bookDetailsForCheckout = await fetchBookDetails();
           }
 
-          // 2. buat rental - tidak perlu semua field
+          // 2. buat rental - without payment_method, will be set by webhook
           const rentalInput = {
             user_id: userId,
             total_amount: calculateTotal(),
-            payment_method: paymentMethod,
-            // status is set to "pending" by default in the model nanti tergantung midtrans payment status
+            // No payment_method here, will be set by webhook
           };
 
           const { data: rentalData } = await client.mutate({

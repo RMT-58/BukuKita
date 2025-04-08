@@ -267,6 +267,7 @@ const CheckoutPage = () => {
     navigate("/cart");
   };
 
+  // Update the handleSubmit function in CheckoutPage.jsx
   const handleSubmit = async (e) => {
     e.preventDefault();
     setCheckoutError(null);
@@ -282,14 +283,14 @@ const CheckoutPage = () => {
       setCheckoutSuccess(true);
       setRentalId(result._id);
 
-      navigate(`/payment?token=${result.token}`);
+      // Pass rental_id as a parameter to the payment page
+      navigate(`/payment?token=${result.token}&rental_id=${result._id}`);
     } catch (error) {
       setCheckoutError(error.message || "Failed to complete checkout");
     } finally {
       setIsProcessing(false);
     }
   };
-
   if (userLoading || loading || isProcessing) {
     return (
       <div className="bg-gray-50 min-h-screen flex items-center justify-center">

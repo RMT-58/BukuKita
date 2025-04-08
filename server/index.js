@@ -47,7 +47,9 @@ export async function createApolloServer(options = {}) {
   const app = express();
   const httpServer = http.createServer(app);
 
-  app.use(express.json());
+  //   app.use(express.json());
+  app.use(express.json({ limit: "15mb" }));
+  app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 
   //masukin midtrans webhooknya didalam ENV BRADER
   // Modify the webhook handler in index.js to use the new method in rental.js
