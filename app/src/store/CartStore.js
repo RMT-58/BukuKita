@@ -284,7 +284,7 @@ export const useCartStore = create(
       },
 
       // prosess checkout nanti tambahkan payment method midtrans
-      checkout: async (userId, paymentMethod = "CASH") => {
+      checkout: async (userId, paymentMethod = "Not added yet") => {
         const {
           setLoading,
           setError,
