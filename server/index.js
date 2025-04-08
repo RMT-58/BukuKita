@@ -46,6 +46,34 @@ export async function createApolloServer(options = {}) {
   const app = express();
   const httpServer = http.createServer(app);
 
+  app.use(express.json());
+
+  //masukin midtrans webhooknya didalam ENV BRADER
+  app.post("/midtrans-webhook", (req, res) => {
+    console.log(req.body);
+    res.status(200).send(req.body);
+    //cek order ID exist in dDB or not
+    //CEK statusnya udh completed atau masih pending
+    //kalau pending kita go
+    //cek gross amount di body midtrans sudah sesuai atau belum dengan amount di rental DB
+    //transaction statusnys cek, capture atau settle, selain 2 itu, berarti GAGAL
+    //GENERATE SIGNATURE KEY order_id + status_code + gross_amount + merchant_server_key (sha512)
+    //cek signature key di body midtrans apakah sama dengan signature key yang kita generate
+    //kalau aman update status menjadi CoMPLETED
+
+    /*
+    const { createHash } = require("node:crypto")
+
+const key = createHash('sha512').update("xSyEfCe3g-oSiihhfW-iQ20050000.00SB-Mid-server-FzY1SoEp8z1crliIG5oXBKIy").digest('hex')
+
+const sKey = "5df184ab6b46bf335412f55a7e1165ca8aa45c6d2dc2d7e8a0b9415efd027ad2598997ab41a29bf6e8610393ba79bfdec4f0a4f732226f5a490be9a1113ee5df"
+
+if (key === sKey) {
+  console.log("Horeee...")
+}
+    */
+  });
+
   //CORS
   app.use(
     cors({

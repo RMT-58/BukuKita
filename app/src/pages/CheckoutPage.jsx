@@ -58,9 +58,10 @@ const CheckoutPage = () => {
       setCheckoutSuccess(true);
       setRentalId(result._id);
 
-      setTimeout(() => {
-        navigate(`/library`, { state: { fromCheckout: true } });
-      }, 2000);
+      // setTimeout(() => {
+      //   navigate(`/library`, { state: { fromCheckout: true } });
+      // }, 2000);
+      navigate(`/payment?token=${result.token}`);
     } catch (error) {
       setCheckoutError(error.message || "Failed to complete checkout");
     } finally {
