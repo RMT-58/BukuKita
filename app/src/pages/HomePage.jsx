@@ -5,6 +5,7 @@ import { Link } from "react-router";
 import { gql, useLazyQuery, useQuery } from "@apollo/client";
 import { FilterBar } from "../components/HomePage/FilterBar";
 import { Pagination } from "../components/HomePage/Pagination";
+import { useCartStore } from "../store/CartStore";
 
 const FIND_ALL_BOOKS = gql`
   query FindAll($query: String, $filters: BookFilters, $options: BookOptions) {
@@ -163,7 +164,8 @@ const HomePage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const booksPerPage = 12;
-  const cartCount = 2;
+  const items = useCartStore((state) => state.items);
+  const totalItems = items.length;
 
   const [fetchBooks, { data, loading: fetchLoading, error: fetchError }] =
     useLazyQuery(FIND_ALL_BOOKS, {
@@ -341,9 +343,9 @@ const HomePage = () => {
           <h1 className="text-xl font-bold">Home</h1>
           <Link to="/cart" className="relative">
             <ShoppingCart size={24} className="text-gray-700" />
-            {cartCount > 0 && (
+            {totalItems > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                {cartCount}
+                {totalItems}
               </span>
             )}
           </Link>
