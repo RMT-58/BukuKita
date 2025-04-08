@@ -62,18 +62,24 @@ export const FilterBar = ({
 
         <FilterDropdown
           label="Status"
-          options={["Available", "Unavailable"]}
+          options={["Available for Rent", "Currently Rented", "Unavailable"]}
           activeOption={
             activeFilters.status
               ? activeFilters.status === "forRent"
-                ? "Available"
-                : "Unavailable"
+                ? "Available for Rent"
+                : activeFilters.status === "rented"
+                  ? "Currently Rented"
+                  : "Unavailable"
               : null
           }
           onSelect={(value) =>
             handleFilterChange(
               "status",
-              value === "Available" ? "forRent" : "isClosed"
+              value === "Available for Rent"
+                ? "forRent"
+                : value === "Currently Rented"
+                  ? "rented"
+                  : "isClosed"
             )
           }
           onClear={() => clearFilter("status")}
