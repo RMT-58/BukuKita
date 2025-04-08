@@ -293,9 +293,9 @@ function BookDetailPage() {
                 </button>
               ) : (
                 <button
-                  disabled={book.status === "rented"}
+                  disabled={book.status !== "rented"}
                   onClick={handleAddToCart}
-                  className={`w-full ${book.status === "rented" ? "bg-gray-400" : "bg-primary hover:bg-primary/90"} text-white py-3 rounded-md font-medium transition-colors`}
+                  className={`w-full ${book.status !== "forRent" ? "bg-gray-400" : "bg-primary hover:bg-primary/90"} text-white py-3 rounded-md font-medium transition-colors`}
                 >
                   {`${book.status !== "forRent" ? "Currently Unavailable!" : "Add Rent Period to Cart"}`}
                 </button>
