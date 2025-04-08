@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@apollo/server/express4";
 import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
@@ -48,14 +51,13 @@ export async function createApolloServer(options = {}) {
   const httpServer = http.createServer(app);
 
   //   app.use(express.json());
+  //tambahin sizenya biar ga gagal upload foto
   app.use(express.json({ limit: "15mb" }));
   app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 
-  //masukin midtrans webhooknya didalam ENV BRADER
-  // Modify the webhook handler in index.js to use the new method in rental.js
-  app.post("/midtrans-webhook", async (req, res) => {
+  //!! masukin midtrans webhooknya didalam ENV BRADER
+  app.post(`/${process.env.MIDTRANS_WEBHOOK}`, async (req, res) => {
     try {
-      // TODO MIDTRANS - Replace current webhook logic with rental model method
       const result = await Rental.handleMidtransWebhook(req.body);
       if (result.success) {
         return res.status(200).json(result);
@@ -96,7 +98,6 @@ export async function createApolloServer(options = {}) {
   app.use(
     cors({
       origin: "*",
-      // methods: ["GET", "POST", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization"],
     })
   );
@@ -254,17 +255,6 @@ export async function createApolloServer(options = {}) {
   app.get("/", (req, res) => {
     res.send("BukuKita API Server. Use /graphql for GraphQL endpoint.");
   });
-
-  // !MULAI SERVER
-  // const PORT = process.env.PORT || 4000;
-
-  // await new Promise((resolve) => httpServer.listen({ port: PORT }, resolve));
-
-  // console.log(`🚀 Server ready at http://localhost:${PORT}/`);
-  // console.log(`📈 GraphQL endpoint: http://localhost:${PORT}/graphql`);
-  // console.log(`🔌 Socket.IO running on the same port`);
-
-  // return { server, httpServer };
 
   const PORT = options.port || process.env.PORT || 4000;
 

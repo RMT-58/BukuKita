@@ -1,142 +1,16 @@
-// import { ObjectId } from "mongodb";
-// import { getDb } from "../config/mongodb.js";
-// import midtransClient from "midtrans-client";
-// // Create Core API instance
-// let snap = new midtransClient.Snap({
-//   isProduction: false,
-//   clientKey: "SB-Mid-client-6pB9MZdWmznmSa-m",
-//   serverKey: "SB-Mid-server-ij4VSUhBOPJK7xlq5-1pT4-z",
-// });
-
-// export default class Rental {
-//   static getCollection() {
-//     const db = getDb();
-//     return db.collection("rentals");
-//   }
-
-//   static async findAll() {
-//     return await this.getCollection().find().toArray();
-//   }
-
-//   static async findRentalById(id) {
-//     return await this.getCollection().findOne({ _id: new ObjectId(id) });
-//   }
-
-//   static async findRentalsByUserId(userId) {
-//     return await this.getCollection().find({ user_id: userId }).toArray();
-//   }
-
-//   static async createRental(data) {
-//     const { user_id, total_amount, payment_method } = data;
-
-//     if (!user_id) throw new Error("User ID is required");
-//     if (typeof total_amount !== "number" || total_amount < 0) {
-//       throw new Error("Total amount must be a positive number");
-//     }
-
-//     const newRental = {
-//       user_id,
-//       total_amount,
-//       status: "pending", //default
-//       payment_method: payment_method || "",
-//       paid_date: null,
-//       created_at: new Date(),
-//       updated_at: new Date(),
-//     };
-
-//     const collection = this.getCollection();
-//     const result = await collection.insertOne(newRental);
-
-//     let parameter = {
-//       transaction_details: {
-//         order_id: result.insertedId.toString(),
-//         gross_amount: total_amount,
-//       },
-//       //   credit_card: {
-//       //     secure: true,
-//       //   },
-//     };
-//     const transaction = await snap.createTransaction(parameter);
-//     // console.log(transaction);
-//     const rentalWithTrx = await this.getCollection().findOneAndUpdate(
-//       { _id: result.insertedId },
-//       {
-//         $set: {
-//           token: transaction.token,
-//           redirect_url: transaction.redirect_url,
-//         },
-//       },
-//       {
-//         returnDocument: "after",
-//       }
-//     );
-//     // console.log(rentalWithTrx);
-
-//     return {
-//       //   _id: result.insertedId,
-//       ...rentalWithTrx,
-//     };
-//   }
-
-//   static async updateRentalStatus(id, status, payment_method = null) {
-//     if (!["pending", "completed", "failed"].includes(status)) {
-//       throw new Error("Invalid status value");
-//     }
-
-//     const collection = this.getCollection();
-//     const _id = new ObjectId(id);
-
-//     const updateData = {
-//       status,
-//       updated_at: new Date(),
-//     };
-
-//     if (status === "completed") {
-//       updateData.paid_date = new Date();
-//       if (payment_method) {
-//         updateData.payment_method = payment_method;
-//       }
-//     }
-
-//     const result = await collection.findOneAndUpdate(
-//       { _id },
-//       { $set: updateData },
-//       {
-//         returnDocument: "after",
-//         upsert: false,
-//       }
-//     );
-
-//     if (!result.value) {
-//       const fallback = await collection.findOne({ _id });
-//       if (!fallback) throw new Error(`Rental with ID ${id} not found`);
-//       return fallback;
-//     }
-
-//     return result.value;
-//   }
-
-//   static async deleteRental(id) {
-//     const collection = this.getCollection();
-//     const _id = new ObjectId(id);
-//     const result = await collection.deleteOne({ _id });
-
-//     if (result.deletedCount === 0) {
-//       throw new Error(`Rental with ID ${id} not found`);
-//     }
-//   }
-// }
+import dotenv from "dotenv";
+dotenv.config();
 
 import { ObjectId } from "mongodb";
 import { getDb } from "../config/mongodb.js";
 import midtransClient from "midtrans-client";
-// TODO MIDTRANS - Import crypto for signature verification
 import crypto from "crypto";
+
 // Create Core API instance
 let snap = new midtransClient.Snap({
   isProduction: false,
-  clientKey: "SB-Mid-client-6pB9MZdWmznmSa-m",
-  serverKey: "SB-Mid-server-ij4VSUhBOPJK7xlq5-1pT4-z",
+  clientKey: process.env.MIDTRANS_CLIENT_KEY,
+  serverKey: process.env.MIDTRANS_SERVER_KEY,
 });
 
 export default class Rental {
@@ -254,12 +128,12 @@ export default class Rental {
     }
   }
 
-  // TODO MIDTRANS - Add Midtrans webhook handler method
+  // !!!! MIDTRANS - nambahin webhook midtransnya
   static async handleMidtransWebhook(data) {
     console.log("Midtrans webhook data:", data);
 
     try {
-      // 1. Check if order ID exists in DB
+      // 1. ordernya ada ga di DB
       const orderId = data.order_id;
       const rental = await this.findRentalById(orderId);
 
@@ -268,13 +142,13 @@ export default class Rental {
         return { success: false, message: "Order ID not found" };
       }
 
-      // 2. Check if status is already completed - avoid duplicate processing
+      // 2. cek udh complete belom, supaya ga duplikat (KAPLITALISSS) -
       if (rental.status === "completed") {
         console.log(`Payment for order ${orderId} already completed`);
         return { success: true, message: "Payment already processed" };
       }
 
-      // 3. If status is pending, we can proceed
+      // 3. kalau pending bisa digas
       if (rental.status !== "pending") {
         console.error(
           `Cannot process payment for order ${orderId} with status ${rental.status}`
@@ -285,7 +159,7 @@ export default class Rental {
         };
       }
 
-      // 4. Check if gross_amount matches the amount in DB
+      //4. cek gross_amount sama ga sama total di DB
       const midtransAmount = parseFloat(data.gross_amount);
       if (midtransAmount !== rental.total_amount) {
         console.error(
@@ -294,7 +168,7 @@ export default class Rental {
         return { success: false, message: "Amount mismatch" };
       }
 
-      // 5. Check transaction status, only accept "capture" or "settlement"
+      //5. cek status transaksi, acceptnya capture atau settlement
       const validStatuses = ["capture", "settlement"];
       if (!validStatuses.includes(data.transaction_status)) {
         console.error(
@@ -304,8 +178,8 @@ export default class Rental {
         return { success: false, message: "Invalid transaction status" };
       }
 
-      // 6. Generate and verify signature key
-      const serverKey = "SB-Mid-server-ij4VSUhBOPJK7xlq5-1pT4-z"; // Should be stored in env
+      //6. generate sig key terus di verify
+      const serverKey = process.env.MIDTRANS_SERVER_KEY;
       const signatureData = `${orderId}${data.status_code}${data.gross_amount}${serverKey}`;
       const expectedSignature = crypto
         .createHash("sha512")
@@ -317,7 +191,7 @@ export default class Rental {
         return { success: false, message: "Invalid signature" };
       }
 
-      // 7. All checks passed, update rental status to COMPLETED
+      //7.lalau udh ok semua, update rental status jadi COMPLETED
       await this.updateRentalStatus(orderId, "completed", data.payment_type);
       console.log(`Payment for order ${orderId} successfully completed`);
 
@@ -327,12 +201,12 @@ export default class Rental {
       return { success: false, message: error.message };
     }
   }
-  // TODO BUAT TOKEN BARUUUU
+  // !! BUAT TOKEN BARUUUU KALAU EXPIRE
   static async refreshPaymentToken(id) {
     const rental = await this.findRentalById(id);
     if (!rental) throw new Error(`Rental with ID ${id} not found`);
 
-    // Create new transaction with Midtrans
+    // buat trx baru di midtrans
     let parameter = {
       transaction_details: {
         order_id: id,
@@ -343,7 +217,7 @@ export default class Rental {
     try {
       const transaction = await snap.createTransaction(parameter);
 
-      // Update the rental with new token
+      // rentalnya diganti tokennya yg baru
       const updatedRental = await this.getCollection().findOneAndUpdate(
         { _id: new ObjectId(id) },
         {

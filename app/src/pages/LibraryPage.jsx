@@ -284,7 +284,7 @@ const LibraryPage = () => {
         rental.details &&
         rental.details.length > 0
       ) {
-        const isExpired = rental.details.some((detail) => {
+        const isExpired = rental.details.every((detail) => {
           const rentalEndDate = Number(detail.rental_end);
           return new Date(rentalEndDate) <= currentDate;
         });

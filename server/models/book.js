@@ -20,10 +20,9 @@ export default class Book {
       sortOrder,
     } = params;
 
-    // Create a separate variable to hold status filter
     const statusFilter = filters.status;
 
-    // Build match query without status
+    // bikin match query tanpa status
     let matchStage = {};
 
     // SEARCH CONDITION
@@ -132,7 +131,7 @@ export default class Book {
         },
       },
 
-      // Apply status filter AFTER calculating effective status
+      // di appu status filter SETELAH hitung effective status
       ...(statusFilter
         ? [
             {
@@ -143,7 +142,7 @@ export default class Book {
           ]
         : []),
 
-      // update actual status field to reflect effective status
+      // update  status aktualnya field supaya yang muncul effecticestatus
       {
         $addFields: {
           status: "$effectiveStatus",
@@ -254,89 +253,6 @@ export default class Book {
       },
     };
   }
-  // static async findAll(params = {}) {
-  //   const collection = this.getCollection();
-  //   const {
-  //     query = "",
-  //     filters = {},
-  //     limit = 12,
-  //     skip = 0,
-  //     sort = { created_at: -1 },
-  //     sortField,
-  //     sortOrder,
-  //   } = params;
-
-  //   let queryObject = {};
-
-  //   // SEARCH CONDITION
-  //   if (query && query.trim() !== "") {
-  //     queryObject.$or = [
-  //       { title: { $regex: query, $options: "i" } },
-  //       { author: { $regex: query, $options: "i" } },
-  //       { genres: { $regex: query, $options: "i" } },
-  //     ];
-  //   }
-
-  //   // FILTERS
-  //   if (filters.status) {
-  //     queryObject.status = filters.status;
-  //   }
-
-  //   if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
-  //     queryObject.price = {};
-  //     if (filters.minPrice !== undefined) {
-  //       queryObject.price.$gte = filters.minPrice;
-  //     }
-  //     if (filters.maxPrice !== undefined) {
-  //       queryObject.price.$lte = filters.maxPrice;
-  //     }
-  //   }
-
-  //   if (filters.genres && filters.genres.length > 0) {
-  //     queryObject.genres = { $in: filters.genres };
-  //   }
-
-  //   if (filters.cover_type) {
-  //     queryObject.cover_type = filters.cover_type;
-  //   }
-
-  //   if (filters.uploaded_by) {
-  //     const uploaded_by =
-  //       typeof filters.uploaded_by === "string"
-  //         ? new ObjectId(filters.uploaded_by)
-  //         : filters.uploaded_by;
-  //     queryObject.uploaded_by = uploaded_by;
-  //   }
-
-  //   // SORT
-  //   let sortOptions = sort;
-  //   if (sortField) {
-  //     sortOptions = { [sortField]: sortOrder || -1 };
-  //   }
-
-  //   // PAGINATION
-  //   const totalCount = await collection.countDocuments(queryObject);
-  //   const totalPages = Math.ceil(totalCount / limit);
-  //   const currentPage = Math.floor(skip / limit) + 1;
-
-  //   // RESULT
-  //   const data = await collection
-  //     .find(queryObject)
-  //     .sort(sortOptions)
-  //     .skip(skip)
-  //     .limit(limit)
-  //     .toArray();
-
-  //   return {
-  //     data,
-  //     pagination: {
-  //       totalCount,
-  //       totalPages,
-  //       currentPage,
-  //       limit,
-  //     },
-  //   };
-  // }
 
   static async findBookById(id) {
     const collection = this.getCollection();
@@ -544,7 +460,7 @@ export default class Book {
     return rentalDetails.length === 0;
   }
 
-  // Find books by uploader - now uses the consolidated findAll method
+  // cari buku by uploader pake metode findAll
   static async findBooksByUploaderId(uploaderId) {
     return await this.findAll({
       filters: { uploaded_by: uploaderId },

@@ -83,19 +83,19 @@ export const PaymentPage = () => {
             console.log("Payment success:", result);
 
             // Try to update status on the client side as a fallback
-            if (rentalId) {
-              updateRentalStatus({
-                variables: {
-                  id: rentalId,
-                  input: {
-                    status: "completed",
-                    payment_method: result.payment_type || "midtrans",
-                  },
-                },
-              }).catch((err) =>
-                console.error("Error updating rental status:", err)
-              );
-            }
+            // if (rentalId) {
+            //   updateRentalStatus({
+            //     variables: {
+            //       id: rentalId,
+            //       input: {
+            //         status: "completed",
+            //         payment_method: result.payment_type || "midtrans",
+            //       },
+            //     },
+            //   }).catch((err) =>
+            //     console.error("Error updating rental status:", err)
+            //   );
+            // }
 
             // Redirect with success parameter
             navigate("/library?payment=success");
