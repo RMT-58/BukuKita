@@ -29,6 +29,7 @@ import {
   resolvers as imageResolvers,
   typeDefs as imageTypeDefs,
 } from "./schemas/imageSchema.js";
+import Rental from "./models/rental.js";
 
 //error logging middleware
 const errorLoggingPlugin = {
@@ -45,6 +46,51 @@ export async function createApolloServer(options = {}) {
   //bikinapp Express sama HTTP servernya
   const app = express();
   const httpServer = http.createServer(app);
+
+  //   app.use(express.json());
+  app.use(express.json({ limit: "15mb" }));
+  app.use(express.urlencoded({ extended: true, limit: "15mb" }));
+
+  //masukin midtrans webhooknya didalam ENV BRADER
+  // Modify the webhook handler in index.js to use the new method in rental.js
+  app.post("/midtrans-webhook", async (req, res) => {
+    try {
+      // TODO MIDTRANS - Replace current webhook logic with rental model method
+      const result = await Rental.handleMidtransWebhook(req.body);
+      if (result.success) {
+        return res.status(200).json(result);
+      } else {
+        return res.status(400).json(result);
+      }
+    } catch (error) {
+      console.error("Midtrans webhook error:", error);
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  });
+  //   app.post("/midtrans-webhook", (req, res) => {
+  //     console.log(req.body);
+  //     res.status(200).send(req.body);
+  //     //cek order ID exist in dDB or not
+  //     //CEK statusnya udh completed atau masih pending
+  //     //kalau pending kita go
+  //     //cek gross amount di body midtrans sudah sesuai atau belum dengan amount di rental DB
+  //     //transaction statusnys cek, capture atau settle, selain 2 itu, berarti GAGAL
+  //     //GENERATE SIGNATURE KEY order_id + status_code + gross_amount + merchant_server_key (sha512)
+  //     //cek signature key di body midtrans apakah sama dengan signature key yang kita generate
+  //     //kalau aman update status menjadi CoMPLETED
+
+  //     /*
+  //     const { createHash } = require("node:crypto")
+
+  // const key = createHash('sha512').update("xSyEfCe3g-oSiihhfW-iQ20050000.00SB-Mid-server-FzY1SoEp8z1crliIG5oXBKIy").digest('hex')
+
+  // const sKey = "5df184ab6b46bf335412f55a7e1165ca8aa45c6d2dc2d7e8a0b9415efd027ad2598997ab41a29bf6e8610393ba79bfdec4f0a4f732226f5a490be9a1113ee5df"
+
+  // if (key === sKey) {
+  //   console.log("Horeee...")
+  // }
+  //     */
+  //   });
 
   //CORS
   app.use(

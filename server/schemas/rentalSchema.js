@@ -19,6 +19,8 @@ export const typeDefs = `#graphql
     created_at: String!
     updated_at: String!
     details: [RentalDetail]
+    token: String!
+    redirect_url: String!
   }
 
   type RentalDetail {
@@ -89,6 +91,7 @@ export const typeDefs = `#graphql
     createRental(input: CreateRentalInput!): Rental
     updateRentalStatus(id: ID!, input: UpdateRentalStatusInput!): Rental
     deleteRental(id: ID!): String
+    refreshPaymentToken(id: ID!): Rental
     
     createRentalDetail(input: CreateRentalDetailInput!): RentalDetail
     updateRentalDetail(id: ID!, input: UpdateRentalDetailInput!): RentalDetail
@@ -199,6 +202,25 @@ export const resolvers = {
 
       await RentalDetail.deleteRentalDetail(id);
       return `Rental detail with ID ${id} has been deleted`;
+    }),
+    refreshPaymentToken: requireAuth(async (_, { id }, { user }) => {
+      // ADA GA RENTALKNYA
+      const rental = await Rental.findRentalById(id);
+      if (!rental) throw new Error(`Rental with ID ${id} not found`);
+
+      // PUNYA USER BUKAN
+      if (rental.user_id !== user._id.toString()) {
+        throw new Error("Not authorized to refresh token for this rental");
+      }
+
+      // PENDING GA
+      if (rental.status !== "pending") {
+        throw new Error("Cannot refresh token for non-pending rentals");
+      }
+
+      // Generate token BARU
+      const updatedRental = await Rental.refreshPaymentToken(id);
+      return updatedRental;
     }),
   },
   Rental: {

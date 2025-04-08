@@ -215,7 +215,7 @@ const BookCard = ({ book }) => {
             <img
               src={book.thumbnail_url || "/placeholder.svg"}
               alt={book.title}
-              fill
+              // fill
               className="object-cover"
             />
           </div>
