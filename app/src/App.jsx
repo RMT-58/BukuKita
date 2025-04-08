@@ -19,6 +19,7 @@ import PrivateLayout from "./layouts/PrivateLayout";
 import PublicPage from "./pages/PublicPage";
 import EditBookPage from "./pages/EditBookPage";
 import CheckoutPage from "./pages/CheckoutPage";
+import { PaymentPage } from "./pages/PaymentPage";
 
 const App = () => {
   return (
@@ -48,6 +49,7 @@ const App = () => {
           <Route path="/book/:bookId" element={<BookDetailPage />} />
           <Route path="/edit-book/:id" element={<EditBookPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/payment" element={<PaymentPage />} />
 
           {/* not found */}
           <Route path="*" element={<NotFound />} />

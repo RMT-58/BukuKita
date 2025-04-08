@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, gql, useMutation } from "@apollo/client";
 import MyBookCard from "../components/MyBookCard";
 import RentalDetailsModal from "../components/RentalDetailsModal";
+import { useSearchParams } from "react-router";
+import { useNavigate } from "react-router";
 
 const GET_MY_BOOKS = gql`
   query MyBooks {
@@ -46,6 +48,8 @@ const GET_MY_RENTALS = gql`
       paid_date
       created_at
       updated_at
+      token
+      redirect_url
       details {
         _id
         book_id
@@ -100,6 +104,17 @@ const DELETE_BOOK = gql`
   }
 `;
 
+const REFRESH_PAYMENT_TOKEN = gql`
+  mutation RefreshPaymentToken($id: ID!) {
+    refreshPaymentToken(id: $id) {
+      _id
+      token
+      status
+      updated_at
+    }
+  }
+`;
+
 const LibraryPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("active");
@@ -108,6 +123,95 @@ const LibraryPage = () => {
 
   const [updateBook] = useMutation(UPDATE_BOOK);
   const [deleteBook] = useMutation(DELETE_BOOK);
+  const [refreshingRental, setRefreshingRental] = useState(null);
+  const [refreshPaymentToken] = useMutation(REFRESH_PAYMENT_TOKEN);
+
+  const [searchParams] = useSearchParams();
+  const paymentStatus = searchParams.get("payment");
+  const [statusMessage, setStatusMessage] = useState(null);
+  const navigate = useNavigate();
+
+  // const handlePayNow = (rental) => {
+  //   navigate(`/payment?token=${rental.token}&rental_id=${rental._id}`);
+  // };
+  const handlePayNow = async (rental) => {
+    // Check if token is likely expired (24 hours from update)
+    const isTokenExpired = () => {
+      if (!rental.updated_at) return true;
+
+      const lastUpdate = new Date(parseInt(rental.updated_at));
+      const now = new Date();
+      const hoursDiff = (now - lastUpdate) / (1000 * 60 * 60);
+
+      return hoursDiff >= 24;
+    };
+
+    if (isTokenExpired()) {
+      // Refresh token if expired
+      setRefreshingRental(rental._id);
+      try {
+        const { data } = await refreshPaymentToken({
+          variables: { id: rental._id },
+        });
+
+        if (data?.refreshPaymentToken?.token) {
+          navigate(
+            `/payment?token=${data.refreshPaymentToken.token}&rental_id=${rental._id}`
+          );
+        } else {
+          console.error("Could not refresh payment token");
+        }
+      } catch (error) {
+        console.error("Error refreshing token:", error);
+      } finally {
+        setRefreshingRental(null);
+      }
+    } else {
+      // Use existing token
+      navigate(`/payment?token=${rental.token}&rental_id=${rental._id}`);
+    }
+  };
+
+  useEffect(() => {
+    if (paymentStatus) {
+      switch (paymentStatus) {
+        case "success":
+          setStatusMessage({
+            type: "success",
+            message: "Payment completed successfully!",
+          });
+          break;
+        case "pending":
+          setStatusMessage({
+            type: "warning",
+            message:
+              "Payment is pending. We'll update your rental once it's confirmed.",
+          });
+          break;
+        case "failed":
+          setStatusMessage({
+            type: "error",
+            message: "Payment failed. Please try again or contact support.",
+          });
+          break;
+        case "cancelled":
+          setStatusMessage({
+            type: "info",
+            message: "Payment was cancelled.",
+          });
+          break;
+        default:
+          setStatusMessage(null);
+      }
+
+      // Clear message after 5 seconds
+      const timer = setTimeout(() => {
+        setStatusMessage(null);
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [paymentStatus]);
 
   const {
     loading: loadingBooks,
@@ -180,7 +284,7 @@ const LibraryPage = () => {
         rental.details &&
         rental.details.length > 0
       ) {
-        const isExpired = rental.details.some((detail) => {
+        const isExpired = rental.details.every((detail) => {
           const rentalEndDate = Number(detail.rental_end);
           return new Date(rentalEndDate) <= currentDate;
         });
@@ -240,6 +344,21 @@ const LibraryPage = () => {
         <h1 className="text-xl font-bold">Library</h1>
       </header>
       <div className="p-4 max-w-4xl mx-auto">
+        {statusMessage && (
+          <div
+            className={`mb-4 p-3 rounded ${
+              statusMessage.type === "success"
+                ? "bg-green-50 text-green-700"
+                : statusMessage.type === "warning"
+                  ? "bg-yellow-50 text-yellow-700"
+                  : statusMessage.type === "error"
+                    ? "bg-red-50 text-red-700"
+                    : "bg-blue-50 text-blue-700"
+            }`}
+          >
+            {statusMessage.message}
+          </div>
+        )}
         <div className="relative mb-6">
           <input
             type="text"
@@ -378,12 +497,25 @@ const LibraryPage = () => {
                         <span className="text-gray-500">Books: </span>
                         {rental.details && rental.details.length} items
                       </div>
-                      <button
-                        onClick={() => openRentalDetails(rental)}
-                        className="text-[#00A8FF] text-sm font-medium hover:underline"
-                      >
-                        View Details
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {rental.status === "pending" && (
+                          <button
+                            onClick={() => handlePayNow(rental)}
+                            disabled={refreshingRental === rental._id}
+                            className="text-white bg-[#00A8FF] px-3 py-1 text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors disabled:bg-blue-300 disabled:cursor-not-allowed"
+                          >
+                            {refreshingRental === rental._id
+                              ? "Processing..."
+                              : "Pay Now"}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => openRentalDetails(rental)}
+                          className="text-[#00A8FF] text-sm font-medium hover:underline"
+                        >
+                          View Details
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

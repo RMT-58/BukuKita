@@ -543,7 +543,7 @@ const PublicPage = () => {
                         <img
                           src={book.cover}
                           alt={book.title}
-                          fill
+                          // fill
                           className="object-cover"
                         />
                       </div>
@@ -618,7 +618,7 @@ const PublicPage = () => {
                     <img
                       src={testimonial.avatar}
                       alt={testimonial.name}
-                      fill
+                      // fill
                       className="object-cover"
                     />
                   </div>
