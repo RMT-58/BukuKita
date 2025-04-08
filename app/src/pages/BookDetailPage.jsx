@@ -279,21 +279,21 @@ function BookDetailPage() {
               {isBookOwner ? (
                 <button
                   onClick={handleEditBook}
-                  disabled={book.status === "isClosed"}
+                  disabled={book.status === "rented"}
                   className={`w-full ${
-                    book.status === "isClosed"
+                    book.status === "rented"
                       ? "bg-gray-400 cursor-not-allowed"
                       : "bg-primary hover:bg-primary/90"
                   } text-white py-3 rounded-md font-medium transition-colors flex items-center justify-center gap-2`}
                 >
                   <Edit size={18} />
-                  {book.status === "isClosed"
+                  {book.status === "rented"
                     ? "Can't Edit While Rented"
                     : "Edit Book"}
                 </button>
               ) : (
                 <button
-                  disabled={book.status !== "forRent"}
+                  disabled={book.status !== "rented"}
                   onClick={handleAddToCart}
                   className={`w-full ${book.status !== "forRent" ? "bg-gray-400" : "bg-primary hover:bg-primary/90"} text-white py-3 rounded-md font-medium transition-colors`}
                 >

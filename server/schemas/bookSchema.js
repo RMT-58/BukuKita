@@ -12,6 +12,7 @@ export const typeDefs = `#graphql
     enum BookStatus {
       isClosed
       forRent
+      rented
     }
 
     type Book {

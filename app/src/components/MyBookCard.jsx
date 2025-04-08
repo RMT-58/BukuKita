@@ -8,6 +8,7 @@ import {
   Clock,
   Book,
   Settings,
+  Ban,
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
@@ -33,6 +34,10 @@ const MyBookCard = ({
 
   const handleToggleStatus = async () => {
     try {
+      if (book.status === "rented") {
+        toast.error("Cannot update status. Book is already rented.");
+        return;
+      }
       setIsUpdating(true);
       const newStatus = book.status === "forRent" ? "isClosed" : "forRent";
 
@@ -99,10 +104,16 @@ const MyBookCard = ({
         text: "Available for rent",
         color: "text-green-500",
       };
+    } else if (book.status === "rented") {
+      return {
+        icon: <Ban size={16} className="text-red-500" />,
+        text: "Currently rented",
+        color: "text-red-500",
+      };
     } else {
       return {
-        icon: <Clock size={16} className="text-red-500" />,
-        text: "Not available",
+        icon: <Ban size={16} className="text-red-500" />,
+        text: "Closed by owner",
         color: "text-red-500",
       };
     }
@@ -212,7 +223,9 @@ const MyBookCard = ({
                       <span className="ml-1">
                         {book.status === "forRent"
                           ? "Available"
-                          : "Not Available"}
+                          : book.status === "isClosed"
+                            ? "Not Available"
+                            : "Currently Rented"}
                       </span>
                     </span>
                     <button
@@ -308,19 +321,19 @@ const MyBookCard = ({
             <div className="flex mt-3 gap-2">
               <button
                 onClick={handleEdit}
-                disabled={book.status === "isClosed"}
+                disabled={book.status === "rented"}
                 className={`w-12 h-12 border ${
-                  book.status === "isClosed"
+                  book.status === "rented"
                     ? "border-gray-400 text-gray-400 cursor-not-allowed"
                     : "border-[#00A8FF] text-[#00A8FF] hover:bg-[#f0f9ff]"
                 } rounded flex items-center justify-center transition-colors duration-200`}
                 aria-label={
-                  book.status === "isClosed"
+                  book.status === "rented"
                     ? "Cannot edit while rented"
                     : "Edit book"
                 }
                 title={
-                  book.status === "isClosed"
+                  book.status === "rented"
                     ? "Cannot edit while rented"
                     : "Edit book"
                 }
