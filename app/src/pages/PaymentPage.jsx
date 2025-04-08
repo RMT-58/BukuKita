@@ -40,7 +40,7 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { gql, useMutation } from "@apollo/client";
 
-// Add mutation to manually update status (as a fallback)
+// mutation buat update status
 const UPDATE_RENTAL_STATUS = gql`
   mutation UpdateRentalStatus($id: ID!, $input: UpdateRentalStatusInput!) {
     updateRentalStatus(id: $id, input: $input) {
@@ -63,7 +63,7 @@ export const PaymentPage = () => {
   const [updateRentalStatus] = useMutation(UPDATE_RENTAL_STATUS);
 
   useEffect(() => {
-    // Prevent multiple initializations
+    // Biar gabisa multiple init
     if (paymentInitialized.current) return;
 
     if (!paymentToken) {
@@ -72,17 +72,17 @@ export const PaymentPage = () => {
       return;
     }
 
-    // Initialize Snap
+    // MULAI SNAP
     const initPayment = () => {
       try {
-        // Set flag to prevent multiple initializations
+        // bikin flagnya
         paymentInitialized.current = true;
 
         window.snap.pay(paymentToken, {
           onSuccess: function (result) {
             console.log("Payment success:", result);
 
-            // Try to update status on the client side as a fallback
+            // update client buat fallback
             // if (rentalId) {
             //   updateRentalStatus({
             //     variables: {
@@ -97,7 +97,7 @@ export const PaymentPage = () => {
             //   );
             // }
 
-            // Redirect with success parameter
+            //redirect sukses
             navigate("/library?payment=success");
           },
           onPending: function (result) {
@@ -122,7 +122,7 @@ export const PaymentPage = () => {
       }
     };
 
-    // Simple check if Snap is loaded with timeout
+    //cek snapnya loaded ga
     const checkSnapAndInitialize = () => {
       if (window.snap) {
         initPayment();
@@ -131,12 +131,12 @@ export const PaymentPage = () => {
       }
     };
 
-    // Start checking for Snap
+    // cek snap
     checkSnapAndInitialize();
 
-    // Cleanup function
+    //cleanup
     return () => {
-      // No specific cleanup needed
+      //ga perlu cleanup
     };
   }, [paymentToken, rentalId, navigate, updateRentalStatus]);
 

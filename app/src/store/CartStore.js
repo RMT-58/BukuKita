@@ -93,18 +93,22 @@ const CREATE_RENTAL_DETAIL = gql`
     }
   }
 `;
+//bikin initialstate
+const initialState = {
+  items: [],
+  bookDetails: [],
+  loading: false,
+  error: null,
+  serviceFee: 500,
+  detailsFetched: false,
+};
 
 // buat Zustand store dengan persistance
 export const useCartStore = create(
   persist(
     (set, get) => ({
-      // State
-      items: [],
-      bookDetails: [],
-      loading: false,
-      error: null,
-      serviceFee: 500,
-      detailsFetched: false,
+      // State (pake initial state)
+      ...initialState,
 
       // Actions
       addToCart: (bookId) => {
@@ -193,12 +197,10 @@ export const useCartStore = create(
 
       setDetailsFetched: (fetched) => set({ detailsFetched: fetched }),
 
-      clearCart: () =>
-        set({
-          items: [],
-          bookDetails: [],
-          detailsFetched: false,
-        }),
+      clearCart: () => {
+        localStorage.removeItem("cart-storage");
+        set(initialState);
+      },
 
       // Fetch book details
       fetchBookDetails: async () => {

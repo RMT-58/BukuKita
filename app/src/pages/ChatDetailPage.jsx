@@ -80,10 +80,10 @@ export default function ChatDetailPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [chatPartner, setChatPartner] = useState(null);
 
-  // Query to get current user
+  // get current user
   const { data: userData } = useQuery(GET_CURRENT_USER);
 
-  // Query to get chat room details
+  // get chat room details
   const {
     loading: roomLoading,
     error: roomError,
@@ -93,7 +93,7 @@ export default function ChatDetailPage() {
     skip: !roomId,
   });
 
-  // Query to get chat messages
+  //  get chat messages
   const {
     loading: messagesLoading,
     error: messagesError,
@@ -105,21 +105,21 @@ export default function ChatDetailPage() {
     fetchPolicy: "network-only",
   });
 
-  // Mutation to mark messages as read
+  // mark messages as read
   const [markMessagesAsRead] = useMutation(MARK_MESSAGES_READ);
 
-  // Set current user when data is available
+  // SET current user kalau  data  available
   useEffect(() => {
     if (userData?.me) {
       setCurrentUser(userData.me);
     }
   }, [userData]);
 
-  // Set chat partner when room data is available
+  // SET chat partner kalau ada room data
   useEffect(() => {
     if (roomData?.findRoomById && currentUser) {
       const room = roomData.findRoomById;
-      // Determine chat partner based on current user
+      // cek chat partner dari current user
       if (room.user_id === currentUser._id) {
         setChatPartner(room.receiver);
       } else {
@@ -128,32 +128,32 @@ export default function ChatDetailPage() {
     }
   }, [roomData, currentUser]);
 
-  // Initialize Socket.IO connection
+  // INIT SOCKET
   useEffect(() => {
-    // Get token from localStorage
+    // GET token dari localStorage
     const token = localStorage.getItem("access_token");
 
-    // Connect to Socket.IO server (now on the same port as GraphQL)
+    // CONNECT SOCKET server
     socketRef.current = io("http://localhost:4000/");
 
-    // Authenticate with token
+    // AUTH pakai token
     socketRef.current.emit("authenticate", token);
 
-    // Join room when roomId is available
+    // JOINROOM kalau ada roomId
     if (roomId) {
       socketRef.current.emit("join_room", roomId);
     }
 
-    // Listen for new messages
+    // listen buat new messages
     socketRef.current.on("new_message", (newMessage) => {
       setMessages((prevMessages) => {
-        // Check if message already exists to prevent duplicates
+        // cek duplikat message
         const exists = prevMessages.some((msg) => msg._id === newMessage._id);
         if (exists) return prevMessages;
         return [...prevMessages, newMessage];
       });
 
-      // Mark messages as read if we're the receiver
+      // messages as read kalau penerima
       if (currentUser && newMessage.receiver_id === currentUser._id) {
         markMessagesAsRead({ variables: { roomId } });
         socketRef.current.emit("mark_messages_read", {
@@ -163,7 +163,7 @@ export default function ChatDetailPage() {
       }
     });
 
-    // Cleanup on unmount
+    // CELANUP
     return () => {
       if (socketRef.current) {
         if (roomId) {
@@ -174,12 +174,12 @@ export default function ChatDetailPage() {
     };
   }, [roomId, currentUser, markMessagesAsRead]);
 
-  // Update messages when query data changes
+  // Update message pas query berubah
   useEffect(() => {
     if (messagesData?.findChatsByRoomId) {
       setMessages(messagesData.findChatsByRoomId);
 
-      // Mark messages as read when viewing the chat
+      // tandain read pas view chat
       if (currentUser && roomId) {
         markMessagesAsRead({ variables: { roomId } });
         socketRef.current.emit("mark_messages_read", {
@@ -190,7 +190,7 @@ export default function ChatDetailPage() {
     }
   }, [messagesData, currentUser, roomId, markMessagesAsRead]);
 
-  // Scroll to bottom when messages change
+  // SCROLL kebawah
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -198,21 +198,18 @@ export default function ChatDetailPage() {
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return "";
 
-    // Handle both string and number timestamps
+    // handle timestamp
     let date;
     if (typeof timestamp === "string") {
-      // Try to parse as ISO string first
       date = new Date(timestamp);
-      // If invalid, try to parse as numeric string
       if (isNaN(date.getTime())) {
         date = new Date(Number.parseInt(timestamp));
       }
     } else {
-      // Handle numeric timestamp
       date = new Date(timestamp);
     }
 
-    // Check if date is valid
+    // cek validasi date
     if (isNaN(date.getTime())) {
       console.error("Invalid timestamp:", timestamp);
       return "Just now";
@@ -229,7 +226,7 @@ export default function ChatDetailPage() {
     if (!newMessage.trim() || !roomId || !currentUser || !chatPartner) return;
 
     try {
-      // Send message via Socket.IO
+      // SEND MESSAGE SOCKET
       socketRef.current.emit("send_message", {
         room_id: roomId,
         sender_id: currentUser._id,
