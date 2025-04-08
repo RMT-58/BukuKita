@@ -125,7 +125,7 @@ export default class Book {
           effectiveStatus: {
             $cond: {
               if: { $gt: [{ $size: "$completedRentals" }, 0] },
-              then: "isClosed",
+              then: "rented", //ini gw ganti jadi rented dari isClosed
               else: "$status",
             },
           },
@@ -216,7 +216,7 @@ export default class Book {
           effectiveStatus: {
             $cond: {
               if: { $gt: [{ $size: "$completedRentals" }, 0] },
-              then: "isClosed",
+              then: "rented",
               else: "$status",
             },
           },
@@ -404,7 +404,7 @@ export default class Book {
           status: {
             $cond: {
               if: "$isUnavailable",
-              then: "isClosed",
+              then: "rented",
               else: "$status",
             },
           },
@@ -459,8 +459,10 @@ export default class Book {
     if (typeof condition !== "number" || condition < 0 || condition > 10) {
       throw new Error("Condition must be a number between 0 and 10");
     }
-    if (!["isClosed", "forRent"].includes(status)) {
-      throw new Error("Status must be either 'isClosed' or 'forRent'");
+    if (!["isClosed", "rented", "forRent"].includes(status)) {
+      throw new Error(
+        "Status must be either 'isClosed' or 'forRent' or 'rented'" //TODO ini ganti bang dek JADI TESTINGNYA HARUSNYA GANTI JUGA
+      );
     }
     if (typeof price !== "number" || price < 0) {
       throw new Error("Price must be a positive number");

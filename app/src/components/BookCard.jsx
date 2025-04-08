@@ -61,7 +61,7 @@ const SEND_MESSAGE = gql`
   }
 `;
 
-const BookCard = ({ book, isHome }) => {
+const BookCard = ({ book }) => {
   const addToCart = useCartStore((state) => state.addToCart);
   const { user, fetchUser, isOwner } = useUserStore();
 
@@ -168,10 +168,16 @@ const BookCard = ({ book, isHome }) => {
         text: "Available for rent",
         color: "text-green-500",
       };
+    } else if (book.status === "rented") {
+      return {
+        icon: <Ban size={16} className="text-red-500" />,
+        text: "Currently rented",
+        color: "text-red-500",
+      };
     } else {
       return {
         icon: <Ban size={16} className="text-red-500" />,
-        text: "Closed/Currently rented",
+        text: "Closed by owner",
         color: "text-red-500",
       };
     }
@@ -365,14 +371,14 @@ const BookCard = ({ book, isHome }) => {
             {isBookOwner ? (
               <button
                 onClick={() => navigate(`/edit-book/${book._id}`)}
-                disabled={book.status === "isClosed"}
-                className={`flex-1 ${
-                  book.status === "isClosed"
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-[#00A8FF] hover:bg-[#0098e5]"
-                } text-white h-12 rounded flex items-center justify-center gap-2 py-2 transition-colors duration-200`}
+                disabled={book.status === "rented"}
+                className={`flex-1 h-12 rounded flex items-center justify-center gap-2 py-2 transition-colors duration-200  ${
+                  book.status === "rented"
+                    ? "bg-gray-400 cursor-not-allowed text-white"
+                    : "bg-white text-[#00A8FF] border border-[#00A8FF] hover:bg-[#00A8FF] hover:text-white"
+                }`}
               >
-                {book.status === "isClosed" ? (
+                {book.status === "rented" ? (
                   <div className="relative">
                     <Book className="text-white w-5 h-5" />
                     <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-0.5 shadow">
@@ -383,13 +389,12 @@ const BookCard = ({ book, isHome }) => {
                   <Edit size={18} />
                 )}
                 <span className="ml-1">
-                  {book.status === "isClosed"
-                    ? "Currently Rented"
-                    : "Edit Book"}
+                  {book.status === "rented" ? "Currently Rented" : "Edit Book"}
                 </span>
               </button>
             ) : (
               <>
+                {/* Tombol Chat dengan Pemilik */}
                 <button
                   onClick={handleChatOwner}
                   className="w-12 h-12 border border-[#00A8FF] text-[#00A8FF] rounded flex items-center justify-center hover:bg-[#f0f9ff] transition-colors duration-200"
@@ -398,36 +403,37 @@ const BookCard = ({ book, isHome }) => {
                   <MessageCircle size={20} />
                 </button>
 
-                {isHome ? (
-                  <button
-                    disabled={book.status !== "forRent"}
-                    onClick={handleAddToCart}
-                    className={`flex-1 ${
-                      book.status !== "forRent"
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-[#00A8FF] hover:bg-[#0098e5]"
-                    } text-white rounded flex items-center justify-center gap-2 py-2 transition-colors duration-200`}
-                  >
-                    {book.status !== "forRent" ? (
+                <button
+                  disabled={book.status !== "forRent"}
+                  onClick={handleAddToCart}
+                  className={`flex-1 ${
+                    book.status !== "forRent"
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-[#00A8FF] hover:bg-[#0098e5]"
+                  } text-white rounded flex items-center justify-center gap-2 py-2 transition-colors duration-200`}
+                >
+                  {book.status === "rented" ? (
+                    <>
+                      <div className="relative">
+                        <Book className="text-white w-5 h-5" />
+                        <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-0.5 shadow">
+                          <Check className="text-white w-3 h-3" />
+                        </div>
+                      </div>
+                      <span className="ml-1">Currently Rented</span>
+                    </>
+                  ) : book.status === "isClosed" ? (
+                    <>
                       <Ban size={18} />
-                    ) : (
+                      <span className="ml-1">Currently Unavailable</span>
+                    </>
+                  ) : (
+                    <>
                       <ShoppingCart size={18} />
-                    )}
-                    <span className="ml-1">
-                      {book.status !== "forRent"
-                        ? "Currently Unavailable"
-                        : "Add Rent Period to Cart"}
-                    </span>
-                  </button>
-                ) : (
-                  <Link
-                    to={`/book/${book._id}`}
-                    className="flex-1 bg-[#00A8FF] hover:bg-[#0098e5] text-white rounded flex items-center justify-center gap-2 py-2 transition-colors duration-200"
-                  >
-                    <Book size={18} />
-                    <span className="ml-1">View Details</span>
-                  </Link>
-                )}
+                      <span className="ml-1">Add Rent Period to Cart</span>
+                    </>
+                  )}
+                </button>
               </>
             )}
           </div>
