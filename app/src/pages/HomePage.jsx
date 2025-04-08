@@ -144,22 +144,11 @@ const genreOptions = [
   "Diary",
 ];
 
-// mendapatkan semua cover type buku
-const getCoverTypes = (books) => {
-  const coverSet = new Set();
-  books.forEach((book) => {
-    if (book.cover_type) {
-      coverSet.add(book.cover_type);
-    }
-  });
-  return Array.from(coverSet);
-};
-
 const HomePage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [books, setBooks] = useState([]);
   const [genres, setGenres] = useState([]);
-  const [coverTypes, setCoverTypes] = useState([]);
+  const [coverTypes, setCoverTypes] = useState(["Hardcover", "Paperback"]);
   const [activeFilters, setActiveFilters] = useState({
     genres: null,
     cover_type: null,
@@ -185,7 +174,6 @@ const HomePage = () => {
 
           setBooks(fetchedBooks);
           setGenres(genreOptions);
-          setCoverTypes(getCoverTypes(fetchedBooks));
 
           setTotalPages(pagination.totalPages || 1);
           setTotalCount(pagination.totalCount || 0);

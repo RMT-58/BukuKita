@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { gql, useQuery } from "@apollo/client";
 import logo from "../assets/logo.png";
 import { useUserStore } from "../store/UserStore";
+import { useCartStore } from "../store/CartStore";
 
 const GET_PROFILE = gql`
   query Me {
@@ -88,6 +89,7 @@ const ProfilePage = () => {
   const navigate = useNavigate();
 
   const { clearUser } = useUserStore();
+  const { clearCart } = useCartStore();
 
   const {
     loading: loadingProfile,
@@ -125,6 +127,7 @@ const ProfilePage = () => {
   const handleLogout = () => {
     localStorage.removeItem("access_token");
     clearUser();
+    clearCart();
     navigate("/public");
   };
 

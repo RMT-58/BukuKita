@@ -43,7 +43,7 @@ export const FilterBar = ({
 
         <FilterDropdown
           label="Cover"
-          options={["Hardcover", "Paperback"]}
+          options={coverTypes}
           activeOption={
             activeFilters.cover_type
               ? activeFilters.cover_type === "hardcover"
@@ -268,17 +268,21 @@ export const FilterBar = ({
             <div>
               <p className="text-sm text-gray-500 mb-2">Status</p>
               <div className="flex flex-wrap gap-2">
-                {["available", "rented", "unavailable"].map((status) => (
+                {[
+                  { label: "Available for Rent", value: "forRent" },
+                  { label: "Currently Rented", value: "rented" },
+                  { label: "Unavailable", value: "isClosed" },
+                ].map(({ label, value }) => (
                   <button
-                    key={status}
-                    onClick={() => handleFilterChange("status", status)}
+                    key={value}
+                    onClick={() => handleFilterChange("status", value)}
                     className={`px-3 py-1 rounded-full text-sm ${
-                      activeFilters.status === status
+                      activeFilters.status === value
                         ? "bg-[#00A8FF] text-white"
                         : "bg-gray-100 text-gray-700"
                     }`}
                   >
-                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                    {label}
                   </button>
                 ))}
               </div>
