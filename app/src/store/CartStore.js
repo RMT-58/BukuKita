@@ -45,6 +45,8 @@ const CREATE_RENTAL = gql`
       paid_date
       created_at
       updated_at
+      token
+      redirect_url
       details {
         _id
         book_id

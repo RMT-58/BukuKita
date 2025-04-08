@@ -1,5 +1,12 @@
 import { ObjectId } from "mongodb";
 import { getDb } from "../config/mongodb.js";
+import midtransClient from "midtrans-client";
+// Create Core API instance
+let snap = new midtransClient.Snap({
+  isProduction: false,
+  clientKey: "SB-Mid-client-6pB9MZdWmznmSa-m",
+  serverKey: "SB-Mid-server-ij4VSUhBOPJK7xlq5-1pT4-z",
+});
 
 export default class Rental {
   static getCollection() {
@@ -39,9 +46,35 @@ export default class Rental {
 
     const collection = this.getCollection();
     const result = await collection.insertOne(newRental);
+
+    let parameter = {
+      transaction_details: {
+        order_id: result.insertedId.toString(),
+        gross_amount: total_amount,
+      },
+      //   credit_card: {
+      //     secure: true,
+      //   },
+    };
+    const transaction = await snap.createTransaction(parameter);
+    // console.log(transaction);
+    const rentalWithTrx = await this.getCollection().findOneAndUpdate(
+      { _id: result.insertedId },
+      {
+        $set: {
+          token: transaction.token,
+          redirect_url: transaction.redirect_url,
+        },
+      },
+      {
+        returnDocument: "after",
+      }
+    );
+    // console.log(rentalWithTrx);
+
     return {
-      _id: result.insertedId,
-      ...newRental,
+      //   _id: result.insertedId,
+      ...rentalWithTrx,
     };
   }
 

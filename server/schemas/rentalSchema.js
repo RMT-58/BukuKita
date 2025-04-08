@@ -19,6 +19,8 @@ export const typeDefs = `#graphql
     created_at: String!
     updated_at: String!
     details: [RentalDetail]
+    token: String!
+    redirect_url: String!
   }
 
   type RentalDetail {
