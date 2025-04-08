@@ -104,6 +104,17 @@ const DELETE_BOOK = gql`
   }
 `;
 
+const REFRESH_PAYMENT_TOKEN = gql`
+  mutation RefreshPaymentToken($id: ID!) {
+    refreshPaymentToken(id: $id) {
+      _id
+      token
+      status
+      updated_at
+    }
+  }
+`;
+
 const LibraryPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("active");
@@ -112,14 +123,53 @@ const LibraryPage = () => {
 
   const [updateBook] = useMutation(UPDATE_BOOK);
   const [deleteBook] = useMutation(DELETE_BOOK);
+  const [refreshingRental, setRefreshingRental] = useState(null);
+  const [refreshPaymentToken] = useMutation(REFRESH_PAYMENT_TOKEN);
 
   const [searchParams] = useSearchParams();
   const paymentStatus = searchParams.get("payment");
   const [statusMessage, setStatusMessage] = useState(null);
   const navigate = useNavigate();
 
-  const handlePayNow = (rental) => {
-    navigate(`/payment?token=${rental.token}&rental_id=${rental._id}`);
+  // const handlePayNow = (rental) => {
+  //   navigate(`/payment?token=${rental.token}&rental_id=${rental._id}`);
+  // };
+  const handlePayNow = async (rental) => {
+    // Check if token is likely expired (24 hours from update)
+    const isTokenExpired = () => {
+      if (!rental.updated_at) return true;
+
+      const lastUpdate = new Date(parseInt(rental.updated_at));
+      const now = new Date();
+      const hoursDiff = (now - lastUpdate) / (1000 * 60 * 60);
+
+      return hoursDiff >= 24;
+    };
+
+    if (isTokenExpired()) {
+      // Refresh token if expired
+      setRefreshingRental(rental._id);
+      try {
+        const { data } = await refreshPaymentToken({
+          variables: { id: rental._id },
+        });
+
+        if (data?.refreshPaymentToken?.token) {
+          navigate(
+            `/payment?token=${data.refreshPaymentToken.token}&rental_id=${rental._id}`
+          );
+        } else {
+          console.error("Could not refresh payment token");
+        }
+      } catch (error) {
+        console.error("Error refreshing token:", error);
+      } finally {
+        setRefreshingRental(null);
+      }
+    } else {
+      // Use existing token
+      navigate(`/payment?token=${rental.token}&rental_id=${rental._id}`);
+    }
   };
 
   useEffect(() => {
@@ -399,63 +449,6 @@ const LibraryPage = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {/* {activeTab === "mybooks"
-              ? filteredBooks.map((book) => (
-                  <MyBookCard
-                    key={book._id}
-                    book={book}
-                    onUpdateStatus={updateBook}
-                    onDeleteStatus={deleteBook}
-                    onDeleteSuccess={handleDeleteSuccess}
-                  />
-                ))
-              : filteredRentals.map((rental) => (
-                  <div
-                    key={rental._id}
-                    className="bg-white rounded-lg shadow p-4"
-                  >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <div className="font-medium">
-                          Order #{rental._id.substring(rental._id.length - 6)}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {formatDate(rental.created_at)}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            rental.status === "completed"
-                              ? "bg-green-100 text-green-800"
-                              : rental.status === "pending"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {rental.status.charAt(0).toUpperCase() +
-                            rental.status.slice(1)}
-                        </div>
-                        <div className="font-semibold">
-                          Rp {rental.total_amount.toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 flex justify-between items-center">
-                      <div className="text-sm">
-                        <span className="text-gray-500">Books: </span>
-                        {rental.details && rental.details.length} items
-                      </div>
-                      <button
-                        onClick={() => openRentalDetails(rental)}
-                        className="text-[#00A8FF] text-sm font-medium hover:underline"
-                      >
-                        View Details
-                      </button>
-                    </div>
-                  </div>
-                ))} */}
             {activeTab === "mybooks"
               ? filteredBooks.map((book) => (
                   <MyBookCard
@@ -505,12 +498,15 @@ const LibraryPage = () => {
                         {rental.details && rental.details.length} items
                       </div>
                       <div className="flex items-center gap-2">
-                        {rental.status === "pending" && rental.token && (
+                        {rental.status === "pending" && (
                           <button
                             onClick={() => handlePayNow(rental)}
-                            className="text-white bg-[#00A8FF] px-3 py-1 text-sm font-medium rounded-full hover:bg-blue-600 transition-colors"
+                            disabled={refreshingRental === rental._id}
+                            className="text-white bg-[#00A8FF] px-3 py-1 text-sm font-medium rounded-full hover:bg-blue-600 transition-colors disabled:bg-blue-300 disabled:cursor-not-allowed"
                           >
-                            Pay Now
+                            {refreshingRental === rental._id
+                              ? "Processing..."
+                              : "Pay Now"}
                           </button>
                         )}
                         <button

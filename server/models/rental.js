@@ -183,9 +183,6 @@ export default class Rental {
         order_id: result.insertedId.toString(),
         gross_amount: total_amount,
       },
-      //   credit_card: {
-      //     secure: true,
-      //   },
     };
     const transaction = await snap.createTransaction(parameter);
     // console.log(transaction);
@@ -328,6 +325,43 @@ export default class Rental {
     } catch (error) {
       console.error("Error processing Midtrans webhook:", error);
       return { success: false, message: error.message };
+    }
+  }
+  // TODO BUAT TOKEN BARUUUU
+  static async refreshPaymentToken(id) {
+    const rental = await this.findRentalById(id);
+    if (!rental) throw new Error(`Rental with ID ${id} not found`);
+
+    // Create new transaction with Midtrans
+    let parameter = {
+      transaction_details: {
+        order_id: id,
+        gross_amount: rental.total_amount,
+      },
+    };
+
+    try {
+      const transaction = await snap.createTransaction(parameter);
+
+      // Update the rental with new token
+      const updatedRental = await this.getCollection().findOneAndUpdate(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            token: transaction.token,
+            redirect_url: transaction.redirect_url,
+            updated_at: new Date(),
+          },
+        },
+        {
+          returnDocument: "after",
+        }
+      );
+
+      return updatedRental;
+    } catch (error) {
+      console.error("Error refreshing payment token:", error);
+      throw new Error(`Failed to refresh payment token: ${error.message}`);
     }
   }
 }

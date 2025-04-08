@@ -129,20 +129,81 @@
 // };
 
 // export default RentalDetailsModal;
-
 import { X } from "lucide-react";
 import { Link, useNavigate } from "react-router";
+import { gql, useMutation } from "@apollo/client";
+import { useState } from "react";
+
+// Define the mutation for refreshing payment token
+const REFRESH_PAYMENT_TOKEN = gql`
+  mutation RefreshPaymentToken($id: ID!) {
+    refreshPaymentToken(id: $id) {
+      _id
+      token
+      status
+      updated_at
+    }
+  }
+`;
 
 const RentalDetailsModal = ({ rental, isOpen, onClose, formatDate }) => {
   const navigate = useNavigate();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [paymentError, setPaymentError] = useState(null);
+
+  // Add mutation hook
+  const [refreshPaymentToken] = useMutation(REFRESH_PAYMENT_TOKEN);
 
   if (!isOpen) return null;
 
-  const handlePayNow = () => {
+  const handlePayNow = async () => {
+    if (!rental.token) {
+      // If token is missing, try to refresh it first
+      await handleRefreshToken();
+      return;
+    }
+
     // Close the modal
     onClose();
     // Navigate to payment page with the rental token and ID
     navigate(`/payment?token=${rental.token}&rental_id=${rental._id}`);
+  };
+
+  const handleRefreshToken = async () => {
+    setIsRefreshing(true);
+    setPaymentError(null);
+
+    try {
+      const { data } = await refreshPaymentToken({
+        variables: { id: rental._id },
+      });
+
+      if (data?.refreshPaymentToken?.token) {
+        // Navigate to payment page with new token
+        onClose();
+        navigate(
+          `/payment?token=${data.refreshPaymentToken.token}&rental_id=${rental._id}`
+        );
+      } else {
+        setPaymentError("Could not generate payment token. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error refreshing token:", error);
+      setPaymentError(error.message || "Failed to refresh payment token");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Calculate if token might be expired (24 hours from last update)
+  const isTokenLikelyExpired = () => {
+    if (!rental.updated_at) return true;
+
+    const lastUpdate = new Date(parseInt(rental.updated_at));
+    const now = new Date();
+    const hoursDiff = (now - lastUpdate) / (1000 * 60 * 60);
+
+    return hoursDiff >= 24;
   };
 
   return (
@@ -263,14 +324,39 @@ const RentalDetailsModal = ({ rental, isOpen, onClose, formatDate }) => {
               <span>Rp {rental.total_amount.toLocaleString()}</span>
             </div>
 
+            {/* Payment error message */}
+            {paymentError && (
+              <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-md text-sm">
+                {paymentError}
+              </div>
+            )}
+
             {/* Add Pay Now button for pending rentals */}
-            {rental.status === "pending" && rental.token && (
-              <button
-                onClick={handlePayNow}
-                className="w-full bg-[#00A8FF] text-white py-3 rounded-full font-medium hover:bg-blue-600 transition-colors"
-              >
-                Pay Now
-              </button>
+            {rental.status === "pending" && (
+              <>
+                {isTokenLikelyExpired() ? (
+                  <button
+                    onClick={handleRefreshToken}
+                    disabled={isRefreshing}
+                    className="w-full bg-[#00A8FF] text-white py-3 rounded-full font-medium hover:bg-blue-600 transition-colors disabled:bg-blue-300 disabled:cursor-not-allowed"
+                  >
+                    {isRefreshing ? "Refreshing..." : "Refresh & Pay Now"}
+                  </button>
+                ) : (
+                  <button
+                    onClick={handlePayNow}
+                    disabled={isRefreshing}
+                    className="w-full bg-[#00A8FF] text-white py-3 rounded-full font-medium hover:bg-blue-600 transition-colors disabled:bg-blue-300 disabled:cursor-not-allowed"
+                  >
+                    {isRefreshing ? "Processing..." : "Pay Now"}
+                  </button>
+                )}
+                {isTokenLikelyExpired() && (
+                  <p className="text-xs text-gray-500 mt-2 text-center">
+                    Payment link has expired. Click to generate a new one.
+                  </p>
+                )}
+              </>
             )}
           </div>
         </div>
