@@ -402,7 +402,7 @@ const CheckoutPage = () => {
           <button
             type="submit"
             disabled={loading || isProcessing}
-            className={`w-full bg-[#00A8FF] text-white py-3 rounded-full font-medium ${
+            className={`w-full bg-[#00A8FF] text-white py-3 rounded-lg mt-4 font-medium  ${
               loading || isProcessing ? "opacity-70 cursor-not-allowed" : ""
             }`}
           >

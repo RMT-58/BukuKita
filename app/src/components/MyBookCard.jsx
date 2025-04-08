@@ -325,8 +325,8 @@ const MyBookCard = ({
                 className={`w-12 h-12 border ${
                   book.status === "rented"
                     ? "border-gray-400 text-gray-400 cursor-not-allowed"
-                    : "border-[#00A8FF] text-[#00A8FF] hover:bg-[#f0f9ff]"
-                } rounded flex items-center justify-center transition-colors duration-200`}
+                    : "border-[#00A8FF] text-[#00A8FF] "
+                } rounded flex items-center justify-center hover:bg-[#f0f9ff] transition-colors duration-200`}
                 aria-label={
                   book.status === "rented"
                     ? "Cannot edit while rented"
@@ -342,10 +342,22 @@ const MyBookCard = ({
               </button>
               <button
                 onClick={handleDeleteClick}
-                className="w-12 h-12 border border-red-500 text-red-500 rounded flex items-center justify-center hover:bg-red-50 transition-colors duration-200"
-                aria-label="Delete book"
-                title="Delete book"
-                disabled={isDeleting}
+                className={`w-12 h-12 border ${
+                  book.status === "rented"
+                    ? "border-gray-400 text-gray-400 cursor-not-allowed"
+                    : "border-red-500 text-red-500"
+                }  rounded flex items-center justify-center hover:bg-red-50 transition-colors duration-200`}
+                aria-label={
+                  book.status === "rented"
+                    ? "Cannot delete while rented"
+                    : "Delete book"
+                }
+                title={
+                  book.status === "rented"
+                    ? "Cannot delete while rented"
+                    : "Delete book"
+                }
+                disabled={isDeleting || book.status === "rented"}
               >
                 <Trash2 size={18} className={isDeleting ? "opacity-50" : ""} />
               </button>

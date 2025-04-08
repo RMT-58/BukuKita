@@ -502,7 +502,7 @@ const LibraryPage = () => {
                           <button
                             onClick={() => handlePayNow(rental)}
                             disabled={refreshingRental === rental._id}
-                            className="text-white bg-[#00A8FF] px-3 py-1 text-sm font-medium rounded-full hover:bg-blue-600 transition-colors disabled:bg-blue-300 disabled:cursor-not-allowed"
+                            className="text-white bg-[#00A8FF] px-3 py-1 text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors disabled:bg-blue-300 disabled:cursor-not-allowed"
                           >
                             {refreshingRental === rental._id
                               ? "Processing..."

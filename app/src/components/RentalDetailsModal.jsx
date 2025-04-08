@@ -346,7 +346,7 @@ const RentalDetailsModal = ({ rental, isOpen, onClose, formatDate }) => {
                   <button
                     onClick={handlePayNow}
                     disabled={isRefreshing}
-                    className="w-full bg-[#00A8FF] text-white py-3 rounded-full font-medium hover:bg-blue-600 transition-colors disabled:bg-blue-300 disabled:cursor-not-allowed"
+                    className="w-full bg-[#00A8FF] text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:bg-blue-300 disabled:cursor-not-allowed"
                   >
                     {isRefreshing ? "Processing..." : "Pay Now"}
                   </button>
