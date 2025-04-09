@@ -10,27 +10,21 @@ describe("User API & Schema Tests", () => {
   let userId, userId1, userId2;
   let testUsername, testUsername1, testUsername2;
 
-  // Before all tests, set up the database and start the server
   beforeAll(async () => {
     await setupDatabase();
     const { url: serverUrl } = await startTestServer();
     url = serverUrl;
 
-    // Generate unique usernames for this test run
     testUsername = `testuser_${Date.now()}`;
     testUsername1 = `userschemauser1_${Date.now() + 1}`;
     testUsername2 = `userschemauser2_${Date.now() + 2}`;
   });
 
-  // After all tests, stop the server and tear down the database
   afterAll(async () => {
     await stopTestServer();
     await teardownDatabase();
   });
 
-  // BASIC AUTHENTICATION TESTS
-
-  // Test user registration
   it("should register a new user", async () => {
     const registerMutation = {
       query: `
@@ -58,19 +52,16 @@ describe("User API & Schema Tests", () => {
 
     const response = await request(url).post("/graphql").send(registerMutation);
 
-    // Check if the response is successful
     expect(response.body.errors).toBeUndefined();
     expect(response.body.data.register).toBeDefined();
     expect(response.body.data.register.token).toBeDefined();
     expect(response.body.data.register.user).toBeDefined();
     expect(response.body.data.register.user.name).toBe("Test User");
 
-    // Save token and user ID for later tests
     token = response.body.data.register.token;
     userId = response.body.data.register.user._id;
   });
 
-  // Test user login
   it("should login an existing user", async () => {
     const loginMutation = {
       query: `
@@ -94,7 +85,6 @@ describe("User API & Schema Tests", () => {
 
     const response = await request(url).post("/graphql").send(loginMutation);
 
-    // Check if the response is successful
     expect(response.body.errors).toBeUndefined();
     expect(response.body.data.login).toBeDefined();
     expect(response.body.data.login.token).toBeDefined();
@@ -102,7 +92,6 @@ describe("User API & Schema Tests", () => {
     expect(response.body.data.login.user.username).toBe(testUsername);
   });
 
-  // Test the 'me' query
   it("should return the current user profile when authenticated", async () => {
     const meQuery = {
       query: `
@@ -121,14 +110,12 @@ describe("User API & Schema Tests", () => {
       .set("Authorization", `Bearer ${token}`)
       .send(meQuery);
 
-    // Check if the response is successful
     expect(response.body.errors).toBeUndefined();
     expect(response.body.data.me).toBeDefined();
     expect(response.body.data.me._id).toBe(userId);
     expect(response.body.data.me.username).toBe(testUsername);
   });
 
-  // Test finding a user by ID
   it("should find a user by ID when authenticated", async () => {
     const findUserByIdQuery = {
       query: `
@@ -150,14 +137,12 @@ describe("User API & Schema Tests", () => {
       .set("Authorization", `Bearer ${token}`)
       .send(findUserByIdQuery);
 
-    // Check if the response is successful
     expect(response.body.errors).toBeUndefined();
     expect(response.body.data.findUserById).toBeDefined();
     expect(response.body.data.findUserById._id).toBe(userId);
     expect(response.body.data.findUserById.username).toBe(testUsername);
   });
 
-  // Test updating user profile
   it("should update user profile when authenticated", async () => {
     const updateUserMutation = {
       query: `
@@ -191,7 +176,6 @@ describe("User API & Schema Tests", () => {
     expect(response.body.data.updateUser.address).toBe("123 Updated St");
   });
 
-  // Test updating password
   it("should update password when authenticated", async () => {
     const updatePasswordMutation = {
       query: `
@@ -218,7 +202,6 @@ describe("User API & Schema Tests", () => {
     expect(response.body.errors).toBeUndefined();
     expect(response.body.data.updatePassword).toBeDefined();
 
-    // Skip the ID check if it's null
     if (
       response.body.data.updatePassword &&
       response.body.data.updatePassword._id
@@ -226,7 +209,6 @@ describe("User API & Schema Tests", () => {
       expect(response.body.data.updatePassword._id).toBe(userId);
     }
 
-    // Verify we can login with the new password
     const loginMutation = {
       query: `
         mutation Login($input: LoginInput!) {
@@ -254,11 +236,7 @@ describe("User API & Schema Tests", () => {
     expect(loginResponse.body.data.login.user._id).toBe(userId);
   });
 
-  // MULTIPLE USER TESTS
-
-  // Register additional test users for comprehensive tests
   it("should register two additional test users", async () => {
-    // Register first user
     const registerMutation1 = {
       query: `
         mutation Register($input: RegisterInput!) {
@@ -285,7 +263,6 @@ describe("User API & Schema Tests", () => {
     token1 = response1.body.data.register.token;
     userId1 = response1.body.data.register.user._id;
 
-    // Register second user
     const registerMutation2 = {
       query: `
         mutation Register($input: RegisterInput!) {
@@ -318,9 +295,6 @@ describe("User API & Schema Tests", () => {
     expect(token2).toBeDefined();
   });
 
-  // ERROR HANDLING TESTS
-
-  // Test finding a non-existent user
   it("should handle finding a non-existent user", async () => {
     const nonExistentId = new ObjectId().toString();
 
@@ -350,9 +324,6 @@ describe("User API & Schema Tests", () => {
     );
   });
 
-  // AUTHORIZATION TESTS
-
-  // Test unauthorized user deletion
   it("should fail to delete another user's account", async () => {
     const deleteUserMutation = {
       query: `
@@ -361,7 +332,7 @@ describe("User API & Schema Tests", () => {
         }
       `,
       variables: {
-        id: userId2, // Try to delete user2 while authenticated as user1
+        id: userId2,
       },
     };
 
@@ -376,9 +347,6 @@ describe("User API & Schema Tests", () => {
     );
   });
 
-  // DELETION TESTS
-
-  // Test deleting a user
   it("should delete user when authenticated", async () => {
     const deleteUserMutation = {
       query: `
@@ -400,7 +368,6 @@ describe("User API & Schema Tests", () => {
     expect(response.body.data.deleteUser).toBeDefined();
     expect(response.body.data.deleteUser).toContain("has been deleted");
 
-    // Clean up other test users
     await request(url)
       .post("/graphql")
       .set("Authorization", `Bearer ${token1}`)

@@ -26,7 +26,6 @@ describe("Socket.IO Tests", () => {
   let token2;
   let roomId;
 
-  // Before all tests, set up the database and start the server
   beforeAll(async () => {
     await setupDatabase();
     const result = await createApolloServer({ port: 0 });
@@ -34,7 +33,6 @@ describe("Socket.IO Tests", () => {
     httpServer = result.httpServer;
     url = result.url;
 
-    // Create test users
     const username1 = `socketuser1_${Date.now()}`;
     const username2 = `socketuser2_${Date.now()}`;
 
@@ -55,18 +53,15 @@ describe("Socket.IO Tests", () => {
     token1 = userResult1.token;
     token2 = userResult2.token;
 
-    // Create a room
     roomId = new ObjectId().toString();
   });
 
-  // After all tests, stop the server and tear down the database
   afterAll(async () => {
     await httpServer.close();
     await server.stop();
     await teardownDatabase();
   });
 
-  // Before each test, connect the sockets
   beforeEach((done) => {
     clientSocket1 = Client(url, {
       transports: ["websocket"],
@@ -78,7 +73,6 @@ describe("Socket.IO Tests", () => {
       forceNew: true,
     });
 
-    // Wait for both sockets to connect
     let connected = 0;
     const onConnect = () => {
       connected++;
@@ -89,7 +83,6 @@ describe("Socket.IO Tests", () => {
     clientSocket2.on("connect", onConnect);
   });
 
-  // After each test, disconnect the sockets
   afterEach(() => {
     if (clientSocket1.connected) {
       clientSocket1.disconnect();
@@ -99,18 +92,13 @@ describe("Socket.IO Tests", () => {
     }
   });
 
-  // Test socket authentication - fixed to avoid timeout
   it("should authenticate users with tokens", (done) => {
-    // Authenticate user 1
     clientSocket1.emit("authenticate", token1);
 
-    // Set a timeout to avoid test hanging
     const timeout = setTimeout(() => {
-      // If we reach here, just pass the test
       done();
     }, 1000);
 
-    // Set up a listener for user authentication
     clientSocket1.on("authenticated", (data) => {
       clearTimeout(timeout);
       expect(data).toBeDefined();
@@ -118,17 +106,13 @@ describe("Socket.IO Tests", () => {
     });
   });
 
-  // Test sending and receiving messages
   it("should send and receive messages", (done) => {
-    // Authenticate both users
     clientSocket1.emit("authenticate", token1);
     clientSocket2.emit("authenticate", token2);
 
-    // Both users join the same room
     clientSocket1.emit("join_room", roomId);
     clientSocket2.emit("join_room", roomId);
 
-    // Set up listener for new messages on client 2
     clientSocket2.on("new_message", (message) => {
       expect(message).toBeDefined();
       expect(message.sender_id).toBe(user1._id.toString());
@@ -137,9 +121,7 @@ describe("Socket.IO Tests", () => {
       done();
     });
 
-    // Wait a bit for room joining to complete
     setTimeout(() => {
-      // Client 1 sends a message
       clientSocket1.emit("send_message", {
         room_id: roomId,
         sender_id: user1._id.toString(),
@@ -149,17 +131,13 @@ describe("Socket.IO Tests", () => {
     }, 100);
   });
 
-  // Test marking messages as read
   it("should mark messages as read", (done) => {
-    // Authenticate both users
     clientSocket1.emit("authenticate", token1);
     clientSocket2.emit("authenticate", token2);
 
-    // Both users join the same room
     clientSocket1.emit("join_room", roomId);
     clientSocket2.emit("join_room", roomId);
 
-    // Set up listener for messages_read on client 1
     clientSocket1.on("messages_read", (data) => {
       expect(data).toBeDefined();
       expect(data.room_id).toBe(roomId);
@@ -167,9 +145,7 @@ describe("Socket.IO Tests", () => {
       done();
     });
 
-    // Wait a bit for room joining to complete
     setTimeout(() => {
-      // Client 2 marks messages as read
       clientSocket2.emit("mark_messages_read", {
         roomId: roomId,
         userId: user2._id.toString(),
@@ -178,7 +154,6 @@ describe("Socket.IO Tests", () => {
   });
 
   it("should test Room model methods directly", async () => {
-    // Create a room
     const roomData = {
       user_id: user1._id.toString(),
       receiver_id: user2._id.toString(),
@@ -190,61 +165,52 @@ describe("Socket.IO Tests", () => {
     expect(room.user_id).toBe(user1._id.toString());
     expect(room.receiver_id).toBe(user2._id.toString());
 
-    // Find room by ID
     const foundRoom = await Room.findRoomById(room._id.toString());
     expect(foundRoom).toBeDefined();
     expect(foundRoom._id.toString()).toBe(room._id.toString());
 
-    // Find rooms by user ID
     const roomsByUser = await Room.findRoomsByUserId(user1._id.toString());
     expect(roomsByUser).toBeDefined();
     expect(roomsByUser.length).toBeGreaterThan(0);
 
-    // Find all rooms
     const allRooms = await Room.findAll();
     expect(allRooms).toBeDefined();
     expect(allRooms.length).toBeGreaterThan(0);
 
-    // Update room
     const updateData = { updated_at: new Date() };
     const updatedRoom = await Room.updateRoom(room._id.toString(), updateData);
     expect(updatedRoom).toBeDefined();
     expect(updatedRoom.updated_at).toBeDefined();
 
-    // Test error cases
     try {
       await Room.updateRoom(new ObjectId().toString(), updateData);
-      expect(true).toBe(false); // This should not be reached
+      expect(true).toBe(false);
     } catch (error) {
-      // Just check that an error was thrown, don't check the specific message
       expect(error).toBeDefined();
     }
 
     try {
       await Room.createRoom({ user_id: user1._id.toString() });
-      expect(true).toBe(false); // This should not be reached
+      expect(true).toBe(false);
     } catch (error) {
       expect(error.message).toContain("Receiver ID is required");
     }
 
     try {
       await Room.createRoom({ receiver_id: user2._id.toString() });
-      expect(true).toBe(false); // This should not be reached
+      expect(true).toBe(false);
     } catch (error) {
       expect(error.message).toContain("User ID is required");
     }
 
-    // Delete room
     await Room.deleteRoom(room._id.toString());
     const deletedRoom = await Room.findRoomById(room._id.toString());
     expect(deletedRoom).toBeNull();
 
-    // Test deleting non-existent room
     try {
       await Room.deleteRoom(new ObjectId().toString());
-      expect(true).toBe(false); // This should not be reached
+      expect(true).toBe(false);
     } catch (error) {
-      // Just check that an error was thrown, don't check the specific message
       expect(error).toBeDefined();
     }
   });
