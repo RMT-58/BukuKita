@@ -168,7 +168,7 @@ export default class Rental {
       }
 
       //5. cek status transaksi, acceptnya capture atau settlement
-      const validStatuses = ["capture", "settlement"];
+      const validStatuses = ["capture", "settlement", "pending"];
       if (!validStatuses.includes(data.transaction_status)) {
         console.error(
           `Invalid transaction status for order ${orderId}: ${data.transaction_status}`
