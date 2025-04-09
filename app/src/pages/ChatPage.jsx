@@ -6,6 +6,7 @@ import { Search } from "lucide-react";
 import { gql, useQuery, useMutation } from "@apollo/client";
 import { io } from "socket.io-client";
 import logo from "../assets/logo.png";
+import { server } from "../utils/server";
 
 const GET_MY_ROOMS = gql`
   query GetMyRooms {
@@ -74,7 +75,7 @@ const ChatPage = () => {
   useEffect(() => {
     const token = localStorage.getItem("access_token");
 
-    socketRef.current = io("http://localhost:4000/");
+    socketRef.current = io(server);
 
     socketRef.current.emit("authenticate", token);
 
