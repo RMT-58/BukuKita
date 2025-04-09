@@ -6,6 +6,7 @@ import { useNavigate, useParams } from "react-router";
 import { gql, useQuery, useMutation } from "@apollo/client";
 import { io } from "socket.io-client";
 import logo from "../assets/logo.png";
+import { server } from "../utils/server";
 
 const GET_CHAT_MESSAGES = gql`
   query GetChatsByRoomId($roomId: String!) {
@@ -134,7 +135,7 @@ export default function ChatDetailPage() {
     const token = localStorage.getItem("access_token");
 
     // CONNECT SOCKET server
-    socketRef.current = io("http://localhost:4000/");
+    socketRef.current = io(server);
 
     // AUTH pakai token
     socketRef.current.emit("authenticate", token);
