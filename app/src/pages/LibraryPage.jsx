@@ -271,12 +271,21 @@ const LibraryPage = () => {
     }
 
     return rentalsData.myRentals.filter((rental) => {
+      // Filter rental berdasarkan status pending
       if (activeTab === "pending" && rental.status !== "pending") {
         return false;
       }
 
+      // Filter rental pending dari tab lain
       if (activeTab !== "pending" && rental.status === "pending") {
         return false;
+      }
+
+      // Menangani status rental yang failed dan pindah ke history
+      // Rental dengan status failed akan selalu masuk ke tab history
+      // terlepas dari tanggal rental_end
+      if (activeTab === "history" && rental.status === "failed") {
+        return true;
       }
 
       if (
@@ -289,9 +298,12 @@ const LibraryPage = () => {
           return new Date(rentalEndDate) <= currentDate;
         });
 
+        // Jika rental berstatus failed, maka termasuk history meski belum expired
+        const isFailedRental = rental.status === "failed";
+
         if (
-          (activeTab === "active" && isExpired) ||
-          (activeTab === "history" && !isExpired)
+          (activeTab === "active" && (isExpired || isFailedRental)) ||
+          (activeTab === "history" && !isExpired && !isFailedRental)
         ) {
           return false;
         }
