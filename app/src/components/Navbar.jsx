@@ -12,6 +12,7 @@ import logo from "../assets/logo.png";
 import { useCartStore } from "../store/CartStore";
 import { gql, useQuery } from "@apollo/client";
 import { io } from "socket.io-client";
+import { server } from "../utils/server";
 
 // query untuk mendapatkan room dengan unread count
 const GET_MY_ROOMS = gql`
@@ -51,7 +52,7 @@ const Navbar = () => {
     const token = localStorage.getItem("access_token");
 
     // connect ke server socket.io
-    socketRef.current = io("http://localhost:4000/");
+    socketRef.current = io(server);
 
     // kasihkan token ke socket.io
     socketRef.current.emit("authenticate", token);
