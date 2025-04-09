@@ -10,13 +10,11 @@ describe("Book API Tests", () => {
   let bookIds = [];
   let testUsername, secondTestUsername;
 
-  // Before all tests, set up the database and start the server
   beforeAll(async () => {
     await setupDatabase();
     const { url: serverUrl } = await startTestServer();
     url = serverUrl;
 
-    // Register a primary test user for book operations
     testUsername = `bookuser_${Date.now()}`;
     const registerMutation = {
       query: `
@@ -42,7 +40,6 @@ describe("Book API Tests", () => {
     token = response.body.data.register.token;
     userId = response.body.data.register.user._id;
 
-    // Register a second test user
     secondTestUsername = `bookuser2_${Date.now()}`;
     const secondRegisterMutation = {
       query: `
@@ -70,7 +67,6 @@ describe("Book API Tests", () => {
     secondToken = secondResponse.body.data.register.token;
     secondUserId = secondResponse.body.data.register.user._id;
 
-    // Add multiple test books with different properties for advanced testing
     const books = [
       {
         title: "Fantasy Book",
@@ -124,15 +120,11 @@ describe("Book API Tests", () => {
     }
   });
 
-  // After all tests, stop the server and tear down the database
   afterAll(async () => {
     await stopTestServer();
     await teardownDatabase();
   });
 
-  // BASIC CRUD TESTS
-
-  // Test adding a book
   it("should add a new book when authenticated", async () => {
     const addBookMutation = {
       query: `
@@ -167,18 +159,15 @@ describe("Book API Tests", () => {
       .set("Authorization", `Bearer ${token}`)
       .send(addBookMutation);
 
-    // Check if the response is successful
     expect(response.body.errors).toBeUndefined();
     expect(response.body.data.addBook).toBeDefined();
     expect(response.body.data.addBook.title).toBe("Test Book");
     expect(response.body.data.addBook.author).toBe("Test Author");
     expect(response.body.data.addBook.price).toBe(5000);
 
-    // Save book ID for later tests
     bookIds.push(response.body.data.addBook._id);
   });
 
-  // Test finding a book by ID
   it("should find a book by ID", async () => {
     const findBookByIdQuery = {
       query: `
@@ -206,7 +195,6 @@ describe("Book API Tests", () => {
       .post("/graphql")
       .send(findBookByIdQuery);
 
-    // Check if the response is successful
     expect(response.body.errors).toBeUndefined();
     expect(response.body.data.findBookById).toBeDefined();
     expect(response.body.data.findBookById._id).toBe(bookIds[0]);
@@ -215,7 +203,6 @@ describe("Book API Tests", () => {
     expect(response.body.data.findBookById.uploaded_by._id).toBe(userId);
   });
 
-  // Test finding all books
   it("should find all books", async () => {
     const findAllQuery = {
       query: `
@@ -237,7 +224,6 @@ describe("Book API Tests", () => {
 
     const response = await request(url).post("/graphql").send(findAllQuery);
 
-    // Check if the response is successful
     expect(response.body.errors).toBeUndefined();
     expect(response.body.data.findAll).toBeDefined();
     expect(response.body.data.findAll.data).toBeInstanceOf(Array);
@@ -245,7 +231,6 @@ describe("Book API Tests", () => {
     expect(response.body.data.findAll.pagination).toBeDefined();
   });
 
-  // Test updating a book
   it("should update a book when authenticated as the uploader", async () => {
     const updateBookMutation = {
       query: `
@@ -280,7 +265,6 @@ describe("Book API Tests", () => {
     expect(response.body.data.updateBook.status).toBe("forRent");
   });
 
-  // Test updating a book with invalid data
   it("should handle updating a book with invalid data", async () => {
     const updateBookMutation = {
       query: `
@@ -294,7 +278,7 @@ describe("Book API Tests", () => {
       variables: {
         id: bookIds[0],
         input: {
-          cover_type: "invalid_type", // Invalid cover type
+          cover_type: "invalid_type",
         },
       },
     };
@@ -307,9 +291,6 @@ describe("Book API Tests", () => {
     expect(response.body.errors).toBeDefined();
   });
 
-  // ADVANCED QUERY TESTS
-
-  // Test searching for books
   it("should search for books by title or author", async () => {
     const searchQuery = {
       query: `
@@ -333,12 +314,10 @@ describe("Book API Tests", () => {
 
     const response = await request(url).post("/graphql").send(searchQuery);
 
-    // Check if the response is successful
     expect(response.body.errors).toBeUndefined();
     expect(response.body.data.findAll).toBeDefined();
     expect(response.body.data.findAll.data).toBeInstanceOf(Array);
 
-    // At least one book should have "Fantasy" in the title or author
     if (response.body.data.findAll.data.length > 0) {
       const hasFantasy = response.body.data.findAll.data.some(
         (book) =>
@@ -348,7 +327,6 @@ describe("Book API Tests", () => {
     }
   });
 
-  // Test filtering books
   it("should filter books by various criteria", async () => {
     const filterQuery = {
       query: `
@@ -378,12 +356,10 @@ describe("Book API Tests", () => {
 
     const response = await request(url).post("/graphql").send(filterQuery);
 
-    // Check if the response is successful
     expect(response.body.errors).toBeUndefined();
     expect(response.body.data.findAll).toBeDefined();
     expect(response.body.data.findAll.data).toBeInstanceOf(Array);
 
-    // All returned books should match the filter criteria
     response.body.data.findAll.data.forEach((book) => {
       expect(book.status).toBe("forRent");
       expect(book.price).toBeGreaterThanOrEqual(5000);
@@ -391,7 +367,6 @@ describe("Book API Tests", () => {
     });
   });
 
-  // Test checking book availability
   it("should check if a book is available", async () => {
     const isBookAvailableQuery = {
       query: `
@@ -400,7 +375,7 @@ describe("Book API Tests", () => {
         }
       `,
       variables: {
-        id: bookIds[0], // Use the first book
+        id: bookIds[0],
       },
     };
 
@@ -408,13 +383,11 @@ describe("Book API Tests", () => {
       .post("/graphql")
       .send(isBookAvailableQuery);
 
-    // Check if the response is successful
     expect(response.body.errors).toBeUndefined();
     expect(response.body.data.isBookAvailable).toBeDefined();
     expect(typeof response.body.data.isBookAvailable).toBe("boolean");
   });
 
-  // Test finding user's own books
   it("should find books uploaded by the authenticated user", async () => {
     const myBooksQuery = {
       query: `
@@ -434,19 +407,16 @@ describe("Book API Tests", () => {
       .set("Authorization", `Bearer ${token}`)
       .send(myBooksQuery);
 
-    // Check if the response is successful
     expect(response.body.errors).toBeUndefined();
     expect(response.body.data.myBooks).toBeDefined();
     expect(response.body.data.myBooks).toBeInstanceOf(Array);
     expect(response.body.data.myBooks.length).toBeGreaterThan(0);
 
-    // All books should belong to the user
     response.body.data.myBooks.forEach((book) => {
       expect(book.uploader_id).toBe(userId);
     });
   });
 
-  // Test sorting and pagination
   it("should sort and paginate book results", async () => {
     const sortAndPaginateQuery = {
       query: `
@@ -470,7 +440,7 @@ describe("Book API Tests", () => {
           limit: 2,
           skip: 0,
           sortField: "price",
-          sortOrder: -1, // Descending
+          sortOrder: -1,
         },
       },
     };
@@ -479,27 +449,21 @@ describe("Book API Tests", () => {
       .post("/graphql")
       .send(sortAndPaginateQuery);
 
-    // Check if the response is successful
     expect(response.body.errors).toBeUndefined();
     expect(response.body.data.findAll).toBeDefined();
     expect(response.body.data.findAll.data).toBeInstanceOf(Array);
-    expect(response.body.data.findAll.data.length).toBeLessThanOrEqual(2); // Limit is 2
+    expect(response.body.data.findAll.data.length).toBeLessThanOrEqual(2);
 
-    // Check if sorting works
     if (response.body.data.findAll.data.length > 1) {
       expect(response.body.data.findAll.data[0].price).toBeGreaterThanOrEqual(
         response.body.data.findAll.data[1].price
       );
     }
 
-    // Check pagination info
     expect(response.body.data.findAll.pagination.currentPage).toBe(1);
     expect(response.body.data.findAll.pagination.limit).toBe(2);
   });
 
-  // AUTHORIZATION TESTS
-
-  // Test unauthorized book update
   it("should fail to update a book when not authenticated as the uploader", async () => {
     const updateBookMutation = {
       query: `
@@ -527,7 +491,6 @@ describe("Book API Tests", () => {
     expect(response.body.errors[0].message).toContain("Not authorized");
   });
 
-  // Test unauthorized book deletion
   it("should fail to delete a book when not authenticated as the uploader", async () => {
     const deleteBookMutation = {
       query: `
@@ -549,9 +512,8 @@ describe("Book API Tests", () => {
     expect(response.body.errors[0].message).toContain("Not authorized");
   });
 
-  // Test finding a non-existent book
   it("should handle finding a non-existent book", async () => {
-    const nonExistentId = "60f1b5b5b5b5b5b5b5b5b5b5"; // Non-existent ID
+    const nonExistentId = "60f1b5b5b5b5b5b5b5b5b5b5";
     const findBookByIdQuery = {
       query: `
         query FindBookById($id: ID!) {
@@ -574,9 +536,7 @@ describe("Book API Tests", () => {
     expect(response.body.errors[0].message).toContain("not found");
   });
 
-  // Test deleting a book
   it("should delete a book when authenticated as the uploader", async () => {
-    // First create a new book to delete
     const addBookMutation = {
       query: `
         mutation AddBook($input: AddBookInput!) {
@@ -605,7 +565,6 @@ describe("Book API Tests", () => {
 
     const bookToDeleteId = addResponse.body.data.addBook._id;
 
-    // Now delete the book
     const deleteBookMutation = {
       query: `
         mutation DeleteBook($id: ID!) {

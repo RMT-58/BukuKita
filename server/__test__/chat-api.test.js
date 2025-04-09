@@ -12,17 +12,14 @@ describe("Chat API Tests", () => {
   let chatId;
   let testUsername1, testUsername2;
 
-  // Before all tests, set up the database and start the server
   beforeAll(async () => {
     await setupDatabase();
     const { url: serverUrl } = await startTestServer();
     url = serverUrl;
 
-    // Register two test users for chat operations
     testUsername1 = `chatuser1_${Date.now()}`;
     testUsername2 = `chatuser2_${Date.now()}`;
 
-    // Register first user
     const registerMutation1 = {
       query: `
         mutation Register($input: RegisterInput!) {
@@ -49,7 +46,6 @@ describe("Chat API Tests", () => {
     token1 = response1.body.data.register.token;
     userId1 = response1.body.data.register.user._id;
 
-    // Register second user
     const registerMutation2 = {
       query: `
         mutation Register($input: RegisterInput!) {
@@ -77,15 +73,11 @@ describe("Chat API Tests", () => {
     userId2 = response2.body.data.register.user._id;
   });
 
-  // After all tests, stop the server and tear down the database
   afterAll(async () => {
     await stopTestServer();
     await teardownDatabase();
   });
 
-  // ROOM OPERATIONS
-
-  // Test creating a room
   it("should create a new chat room when authenticated", async () => {
     const createRoomMutation = {
       query: `
@@ -110,17 +102,14 @@ describe("Chat API Tests", () => {
       .set("Authorization", `Bearer ${token1}`)
       .send(createRoomMutation);
 
-    // Check if the response is successful
     expect(response.body.errors).toBeUndefined();
     expect(response.body.data.createRoom).toBeDefined();
     expect(response.body.data.createRoom.user_id).toBe(userId1);
     expect(response.body.data.createRoom.receiver_id).toBe(userId2);
 
-    // Save room ID for later tests
     roomId = response.body.data.createRoom._id;
   });
 
-  // Test finding all rooms
   it("should find all rooms when authenticated", async () => {
     const findAllRoomsQuery = {
       query: `
@@ -147,7 +136,6 @@ describe("Chat API Tests", () => {
     expect(response.body.data.findAllRooms.length).toBeGreaterThan(0);
   });
 
-  // Test finding a room by ID
   it("should find a room by ID when authenticated", async () => {
     const findRoomByIdQuery = {
       query: `
@@ -178,7 +166,6 @@ describe("Chat API Tests", () => {
     expect(response.body.data.findRoomById.receiver_id).toBe(userId2);
   });
 
-  // Test finding a non-existent room
   it("should handle finding a non-existent room", async () => {
     const nonExistentId = new ObjectId().toString();
 
@@ -206,7 +193,6 @@ describe("Chat API Tests", () => {
     expect(response.body.errors[0].message).toContain("not found");
   });
 
-  // Test finding rooms by user ID
   it("should find rooms by user ID when authenticated", async () => {
     const findRoomsByUserIdQuery = {
       query: `
@@ -235,7 +221,6 @@ describe("Chat API Tests", () => {
     expect(response.body.data.findRoomsByUserId[0].user_id).toBe(userId1);
   });
 
-  // Test finding my rooms
   it("should find rooms for the authenticated user", async () => {
     const myRoomsQuery = {
       query: `
@@ -259,16 +244,12 @@ describe("Chat API Tests", () => {
     expect(response.body.data.myRooms).toBeInstanceOf(Array);
     expect(response.body.data.myRooms.length).toBeGreaterThan(0);
 
-    // Find the room we created
     const foundRoom = response.body.data.myRooms.find((r) => r._id === roomId);
     expect(foundRoom).toBeDefined();
     expect(foundRoom.user_id).toBe(userId1);
     expect(foundRoom.receiver_id).toBe(userId2);
   });
 
-  // CHAT OPERATIONS
-
-  // Test sending a message
   it("should send a message when authenticated", async () => {
     const sendMessageMutation = {
       query: `
@@ -293,7 +274,6 @@ describe("Chat API Tests", () => {
       .set("Authorization", `Bearer ${token1}`)
       .send(sendMessageMutation);
 
-    // Check if the response is successful
     expect(response.body.errors).toBeUndefined();
     expect(response.body.data.sendMessage).toBeDefined();
     expect(response.body.data.sendMessage.sender_id).toBe(userId1);
@@ -302,11 +282,9 @@ describe("Chat API Tests", () => {
       "Hello, this is a test message!"
     );
 
-    // Save chat ID for later tests
     chatId = response.body.data.sendMessage._id;
   });
 
-  // Test finding chats by room ID
   it("should find chats by room ID when authenticated", async () => {
     const findChatsByRoomIdQuery = {
       query: `
@@ -329,7 +307,6 @@ describe("Chat API Tests", () => {
       .set("Authorization", `Bearer ${token1}`)
       .send(findChatsByRoomIdQuery);
 
-    // Check if the response is successful
     expect(response.body.errors).toBeUndefined();
     expect(response.body.data.findChatsByRoomId).toBeDefined();
     expect(response.body.data.findChatsByRoomId).toBeInstanceOf(Array);
@@ -339,7 +316,6 @@ describe("Chat API Tests", () => {
     );
   });
 
-  // Test finding a chat by ID
   it("should find a chat by ID when authenticated", async () => {
     const findChatByIdQuery = {
       query: `
@@ -373,7 +349,6 @@ describe("Chat API Tests", () => {
     );
   });
 
-  // Test finding a non-existent chat
   it("should handle finding a non-existent chat", async () => {
     const nonExistentId = new ObjectId().toString();
 
@@ -402,7 +377,6 @@ describe("Chat API Tests", () => {
     expect(response.body.errors[0].message).toContain("not found");
   });
 
-  // Test marking messages as read
   it("should mark messages as read when authenticated", async () => {
     const markMessagesAsReadMutation = {
       query: `
@@ -420,14 +394,11 @@ describe("Chat API Tests", () => {
       .set("Authorization", `Bearer ${token2}`)
       .send(markMessagesAsReadMutation);
 
-    // Check if the response is successful
     expect(response.body.errors).toBeUndefined();
     expect(response.body.data.markMessagesAsRead).toBe(true);
   });
 
-  // Test counting unread messages
   it("should count unread messages when authenticated", async () => {
-    // First, send a new message
     const sendMessageMutation = {
       query: `
         mutation SendMessage($receiverId: String!, $message: String!) {
@@ -447,7 +418,6 @@ describe("Chat API Tests", () => {
       .set("Authorization", `Bearer ${token1}`)
       .send(sendMessageMutation);
 
-    // Now count unread messages
     const countUnreadMessagesQuery = {
       query: `
         query CountUnreadMessages($roomId: String!) {
@@ -464,13 +434,11 @@ describe("Chat API Tests", () => {
       .set("Authorization", `Bearer ${token2}`)
       .send(countUnreadMessagesQuery);
 
-    // Check if the response is successful
     expect(response.body.errors).toBeUndefined();
     expect(response.body.data.countUnreadMessages).toBeDefined();
     expect(response.body.data.countUnreadMessages).toBe(1);
   });
 
-  // Test finding all chats
   it("should find all chats when authenticated", async () => {
     const findAllChatsQuery = {
       query: `
@@ -497,7 +465,6 @@ describe("Chat API Tests", () => {
     expect(response.body.data.findAllChats.length).toBeGreaterThan(0);
   });
 
-  // Test finding my chats
   it("should find chats for the authenticated user", async () => {
     const myChatsQuery = {
       query: `
@@ -523,7 +490,6 @@ describe("Chat API Tests", () => {
     expect(response.body.data.myChats.length).toBeGreaterThan(0);
   });
 
-  // Test creating a chat directly
   it("should create a chat directly when authenticated", async () => {
     const createChatMutation = {
       query: `
@@ -564,7 +530,6 @@ describe("Chat API Tests", () => {
     chatId = response.body.data.createChat._id;
   });
 
-  // Test updating a chat
   it("should update a chat when authenticated as the sender", async () => {
     const updateChatMutation = {
       query: `
@@ -593,7 +558,6 @@ describe("Chat API Tests", () => {
     expect(response.body.data.updateChat.message).toBe("Updated test message");
   });
 
-  // Test updating a non-existent chat
   it("should handle updating a non-existent chat", async () => {
     const nonExistentId = new ObjectId().toString();
 
@@ -622,7 +586,7 @@ describe("Chat API Tests", () => {
     expect(response.body.errors).toBeDefined();
     expect(response.body.errors[0].message).toContain("not found");
   });
-  // Test finding chats between users
+
   it("should find chats between users when authenticated", async () => {
     const findChatsBetweenUsersQuery = {
       query: `
@@ -646,16 +610,13 @@ describe("Chat API Tests", () => {
       .set("Authorization", `Bearer ${token1}`)
       .send(findChatsBetweenUsersQuery);
 
-    // Check if the response is successful
     expect(response.body.errors).toBeUndefined();
     expect(response.body.data.findChatsBetweenUsers).toBeDefined();
     expect(response.body.data.findChatsBetweenUsers).toBeInstanceOf(Array);
     expect(response.body.data.findChatsBetweenUsers.length).toBeGreaterThan(0);
   });
 
-  // Test sending a message with room creation
   it("should create a room when sending a message if room doesn't exist", async () => {
-    // Create a new receiver user
     const receiverUsername = `receiveruser_${Date.now()}`;
     const registerReceiverMutation = {
       query: `
@@ -682,7 +643,6 @@ describe("Chat API Tests", () => {
       .send(registerReceiverMutation);
     const newReceiverId = receiverResponse.body.data.register.user._id;
 
-    // Send a message to the new receiver
     const sendMessageMutation = {
       query: `
         mutation SendMessage($receiverId: String!, $message: String!) {
@@ -716,9 +676,7 @@ describe("Chat API Tests", () => {
     expect(response.body.data.sendMessage.room_id).toBeDefined();
   });
 
-  // Test deleting a chat
   it("should delete a chat when authenticated as the sender", async () => {
-    // First, create a chat to delete
     const createChatMutation = {
       query: `
         mutation CreateChat($input: CreateChatInput!) {
@@ -744,7 +702,6 @@ describe("Chat API Tests", () => {
 
     const chatIdToDelete = createResponse.body.data.createChat._id;
 
-    // Now delete the chat
     const deleteChatMutation = {
       query: `
         mutation DeleteChat($id: ID!) {
@@ -766,7 +723,6 @@ describe("Chat API Tests", () => {
     expect(response.body.data.deleteChat).toContain("has been deleted");
   });
 
-  // Test deleting a non-existent chat
   it("should handle deleting a non-existent chat", async () => {
     const nonExistentId = new ObjectId().toString();
 
@@ -790,9 +746,7 @@ describe("Chat API Tests", () => {
     expect(response.body.errors[0].message).toContain("not found");
   });
 
-  // Test deleting a room
   it("should delete a room when authenticated as the owner", async () => {
-    // Create a new room to delete
     const createRoomMutation = {
       query: `
         mutation CreateRoom($input: CreateRoomInput!) {
@@ -837,9 +791,6 @@ describe("Chat API Tests", () => {
     expect(response.body.data.deleteRoom).toContain("has been deleted");
   });
 
-  // AUTHORIZATION TESTS
-
-  // Test error cases in chat schema
   it("should fail to create a chat as another user", async () => {
     const createChatMutation = {
       query: `
@@ -851,7 +802,7 @@ describe("Chat API Tests", () => {
       `,
       variables: {
         input: {
-          sender_id: userId2, // Trying to send as user2 while authenticated as user1
+          sender_id: userId2,
           receiver_id: userId1,
           message: "This should fail",
           room_id: roomId,
@@ -868,9 +819,7 @@ describe("Chat API Tests", () => {
     expect(createResponse.body.errors[0].message).toContain("Not authorized");
   });
 
-  // Test unauthorized chat update
   it("should fail to update a chat when not authenticated as the sender", async () => {
-    // First create a chat as user1
     const createChatMutation = {
       query: `
         mutation CreateChat($input: CreateChatInput!) {
@@ -896,7 +845,6 @@ describe("Chat API Tests", () => {
 
     const chatId = validCreateResponse.body.data.createChat._id;
 
-    // Try to update the chat as user2
     const updateChatMutation = {
       query: `
         mutation UpdateChat($id: ID!, $input: UpdateChatInput!) {
@@ -922,9 +870,7 @@ describe("Chat API Tests", () => {
     expect(updateResponse.body.errors[0].message).toContain("Not authorized");
   });
 
-  // Test unauthorized chat deletion
   it("should fail to delete a chat when not authenticated as the sender", async () => {
-    // First create a chat as user1
     const createChatMutation = {
       query: `
         mutation CreateChat($input: CreateChatInput!) {
@@ -950,7 +896,6 @@ describe("Chat API Tests", () => {
 
     const chatIdToDelete = createResponse.body.data.createChat._id;
 
-    // Try to delete it as user2
     const deleteChatMutation = {
       query: `
         mutation DeleteChat($id: ID!) {
@@ -971,9 +916,7 @@ describe("Chat API Tests", () => {
     expect(response.body.errors[0].message).toContain("Not authorized");
   });
 
-  // Test unauthorized room deletion
   it("should fail to delete a room when not authenticated as the owner", async () => {
-    // Create a new room
     const createRoomMutation = {
       query: `
         mutation CreateRoom($input: CreateRoomInput!) {
@@ -997,7 +940,6 @@ describe("Chat API Tests", () => {
 
     const newRoomId = roomResponse.body.data.createRoom._id;
 
-    // Try to delete the room with the second user
     const deleteRoomMutation = {
       query: `
         mutation DeleteRoom($id: ID!) {
@@ -1018,11 +960,7 @@ describe("Chat API Tests", () => {
     expect(response.body.errors[0].message).toContain("Not authorized");
   });
 
-  // TEST TYPE RESOLVERS
-
-  // Test Room type resolvers
   it("should resolve Room type fields", async () => {
-    // Create a room
     const createRoomMutation = {
       query: `
         mutation CreateRoom($input: CreateRoomInput!) {
@@ -1046,7 +984,6 @@ describe("Chat API Tests", () => {
 
     const newRoomId = createRoomResponse.body.data.createRoom._id;
 
-    // Now query the room with all its fields
     const findRoomByIdQuery = {
       query: `
         query FindRoomById($id: ID!) {
@@ -1091,9 +1028,7 @@ describe("Chat API Tests", () => {
     expect(response.body.data.findRoomById.unreadCount).toBeDefined();
   });
 
-  // Test Chat type resolvers
   it("should resolve Chat type fields", async () => {
-    // Send a message
     const sendMessageMutation = {
       query: `
         mutation SendMessage($receiverId: String!, $message: String!) {
@@ -1115,7 +1050,6 @@ describe("Chat API Tests", () => {
 
     const newChatId = sendResponse.body.data.sendMessage._id;
 
-    // Now query the chat with all its fields
     const findChatByIdQuery = {
       query: `
         query FindChatById($id: ID!) {
