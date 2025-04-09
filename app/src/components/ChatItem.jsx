@@ -43,6 +43,10 @@ const ChatItem = ({ chat }) => {
     }
   };
 
+  function truncateText(text, maxLength = 60) {
+    return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
+  }
+
   return (
     <div onClick={handleChatClick} className="block cursor-pointer">
       <div className="flex items-center p-3 rounded-md hover:bg-gray-50">
@@ -69,9 +73,9 @@ const ChatItem = ({ chat }) => {
             </span>
           </div>
           <p
-            className={`text-sm truncate ${chat.unreadCount > 0 ? "font-medium" : "text-gray-500"}`}
+            className={`text-sm ${chat.unreadCount > 0 ? "font-medium" : "text-gray-500"}`}
           >
-            {chat.lastMessage.text}
+            {truncateText(chat.lastMessage.text)}
           </p>
         </div>
       </div>
