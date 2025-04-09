@@ -17,7 +17,6 @@ describe("Chat & Room Model Tests", () => {
     await setupDatabase();
     db = getDb();
 
-    // Create test IDs
     userId = new ObjectId().toString();
     receiverId = new ObjectId().toString();
     senderId = new ObjectId().toString();
@@ -27,7 +26,6 @@ describe("Chat & Room Model Tests", () => {
     await teardownDatabase();
   });
 
-  // ROOM MODEL TESTS
   describe("Room Model", () => {
     it("should create a room", async () => {
       const roomData = {
@@ -92,36 +90,33 @@ describe("Chat & Room Model Tests", () => {
 
       try {
         await Room.updateRoom(nonExistentId, updateData);
-        expect(true).toBe(false); // This should not be reached
+        expect(true).toBe(false);
       } catch (error) {
         expect(error).toBeDefined();
       }
     });
 
     it("should validate required fields when creating a room", async () => {
-      // Test missing user_id
       try {
         await Room.createRoom({
           receiver_id: receiverId,
         });
-        expect(true).toBe(false); // This should not be reached
+        expect(true).toBe(false);
       } catch (error) {
         expect(error.message).toContain("User ID is required");
       }
 
-      // Test missing receiver_id
       try {
         await Room.createRoom({
           user_id: userId,
         });
-        expect(true).toBe(false); // This should not be reached
+        expect(true).toBe(false);
       } catch (error) {
         expect(error.message).toContain("Receiver ID is required");
       }
     });
 
     it("should delete a room", async () => {
-      // Create a room to delete
       const roomData = {
         user_id: userId,
         receiver_id: receiverId,
@@ -130,10 +125,8 @@ describe("Chat & Room Model Tests", () => {
       const room = await Room.createRoom(roomData);
       const roomIdToDelete = room._id.toString();
 
-      // Delete the room
       await Room.deleteRoom(roomIdToDelete);
 
-      // Try to find the deleted room
       const deletedRoom = await Room.findRoomById(roomIdToDelete);
       expect(deletedRoom).toBeNull();
     });
@@ -143,14 +136,13 @@ describe("Chat & Room Model Tests", () => {
 
       try {
         await Room.deleteRoom(nonExistentId);
-        expect(true).toBe(false); // This should not be reached
+        expect(true).toBe(false);
       } catch (error) {
         expect(error).toBeDefined();
       }
     });
   });
 
-  // CHAT MODEL TESTS
   describe("Chat Model", () => {
     it("should create a chat", async () => {
       const chatData = {
@@ -214,7 +206,6 @@ describe("Chat & Room Model Tests", () => {
     });
 
     it("should mark messages as read", async () => {
-      // Create another unread message
       await Chat.createChat({
         sender_id: senderId,
         receiver_id: receiverId,
@@ -225,7 +216,6 @@ describe("Chat & Room Model Tests", () => {
       const result = await Chat.markAsRead(roomId, receiverId);
       expect(result).toBe(true);
 
-      // Verify messages are marked as read
       const chats = await Chat.findChatsByRoomId(roomId);
       const unreadChats = chats.filter(
         (chat) => !chat.read && chat.receiver_id === receiverId
@@ -234,7 +224,6 @@ describe("Chat & Room Model Tests", () => {
     });
 
     it("should count unread messages", async () => {
-      // Create an unread message
       await Chat.createChat({
         sender_id: senderId,
         receiver_id: receiverId,
@@ -253,50 +242,46 @@ describe("Chat & Room Model Tests", () => {
     });
 
     it("should validate required fields", async () => {
-      // Test missing sender_id
       try {
         await Chat.createChat({
           receiver_id: receiverId,
           message: "Test message",
           room_id: roomId,
         });
-        expect(true).toBe(false); // This should not be reached
+        expect(true).toBe(false);
       } catch (error) {
         expect(error.message).toContain("Sender ID is required");
       }
 
-      // Test missing receiver_id
       try {
         await Chat.createChat({
           sender_id: senderId,
           message: "Test message",
           room_id: roomId,
         });
-        expect(true).toBe(false); // This should not be reached
+        expect(true).toBe(false);
       } catch (error) {
         expect(error.message).toContain("Receiver ID is required");
       }
 
-      // Test missing message
       try {
         await Chat.createChat({
           sender_id: senderId,
           receiver_id: receiverId,
           room_id: roomId,
         });
-        expect(true).toBe(false); // This should not be reached
+        expect(true).toBe(false);
       } catch (error) {
         expect(error.message).toContain("Message is required");
       }
 
-      // Test missing room_id
       try {
         await Chat.createChat({
           sender_id: senderId,
           receiver_id: receiverId,
           message: "Test message",
         });
-        expect(true).toBe(false); // This should not be reached
+        expect(true).toBe(false);
       } catch (error) {
         expect(error.message).toContain("Room ID is required");
       }
@@ -306,7 +291,7 @@ describe("Chat & Room Model Tests", () => {
       const nonExistentId = new ObjectId().toString();
       try {
         await Chat.updateChat(nonExistentId, { message: "This should fail" });
-        expect(true).toBe(false); // This should not be reached
+        expect(true).toBe(false);
       } catch (error) {
         expect(error).toBeDefined();
       }
@@ -316,7 +301,7 @@ describe("Chat & Room Model Tests", () => {
       const nonExistentId = new ObjectId().toString();
       try {
         await Chat.deleteChat(nonExistentId);
-        expect(true).toBe(false); // This should not be reached
+        expect(true).toBe(false);
       } catch (error) {
         expect(error).toBeDefined();
       }
