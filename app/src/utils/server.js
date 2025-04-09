@@ -1,1 +1,1 @@
-export const server = "https://bukuserver.dekalouis.com/";
+export const server = "https://bukuserver.dekalouis.com";
