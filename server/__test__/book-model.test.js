@@ -13,7 +13,6 @@ describe("Book Model Tests", () => {
     await setupDatabase();
     db = getDb();
 
-    // Create test IDs
     uploaderId = new ObjectId().toString();
   });
 
@@ -70,7 +69,6 @@ describe("Book Model Tests", () => {
     expect(result).toBeDefined();
     expect(result.data).toBeInstanceOf(Array);
 
-    // If we have results, check that they match the search query
     if (result.data.length > 0) {
       const hasMatch = result.data.some(
         (book) => book.title.includes("Test") || book.author.includes("Test")
@@ -133,7 +131,6 @@ describe("Book Model Tests", () => {
   });
 
   it("should validate book data", async () => {
-    // Test missing title
     try {
       await Book.addBook({
         author: "Test Author",
@@ -144,12 +141,11 @@ describe("Book Model Tests", () => {
         price: 5000,
         uploaded_by: uploaderId,
       });
-      expect(true).toBe(false); // This should not be reached
+      expect(true).toBe(false);
     } catch (error) {
       expect(error.message).toContain("Title is required");
     }
 
-    // Test missing author
     try {
       await Book.addBook({
         title: "Test Book",
@@ -160,65 +156,61 @@ describe("Book Model Tests", () => {
         price: 5000,
         uploaded_by: uploaderId,
       });
-      expect(true).toBe(false); // This should not be reached
+      expect(true).toBe(false);
     } catch (error) {
       expect(error.message).toContain("Author is required");
     }
 
-    // Test invalid genres
     try {
       await Book.addBook({
         title: "Test Book",
         author: "Test Author",
-        genres: "Fiction", // Not an array
+        genres: "Fiction",
         cover_type: "paperback",
         condition: 8,
         status: "forRent",
         price: 5000,
         uploaded_by: uploaderId,
       });
-      expect(true).toBe(false); // This should not be reached
+      expect(true).toBe(false);
     } catch (error) {
       expect(error.message).toContain("Genres must be an array");
     }
 
-    // Test invalid cover type
     try {
       await Book.addBook({
         title: "Test Book",
         author: "Test Author",
         genres: ["Fiction"],
-        cover_type: "invalid_type", // Invalid cover type
+        cover_type: "invalid_type",
         condition: 8,
         status: "forRent",
         price: 5000,
         uploaded_by: uploaderId,
       });
-      expect(true).toBe(false); // This should not be reached
+      expect(true).toBe(false);
     } catch (error) {
       expect(error.message).toContain("Cover type must be either");
     }
 
-    // Test invalid condition
     try {
       await Book.addBook({
         title: "Test Book",
         author: "Test Author",
         genres: ["Fiction"],
         cover_type: "paperback",
-        condition: 11, // Invalid condition (> 10)
+        condition: 11,
         status: "forRent",
         price: 5000,
         uploaded_by: uploaderId,
       });
-      expect(true).toBe(false); // This should not be reached
+      expect(true).toBe(false);
     } catch (error) {
       expect(error.message).toContain(
         "Condition must be a number between 0 and 10"
       );
     }
 
-    // Test invalid status
     try {
       await Book.addBook({
         title: "Test Book",
@@ -226,16 +218,15 @@ describe("Book Model Tests", () => {
         genres: ["Fiction"],
         cover_type: "paperback",
         condition: 8,
-        status: "invalid_status", // Invalid status
+        status: "invalid_status",
         price: 5000,
         uploaded_by: uploaderId,
       });
-      expect(true).toBe(false); // This should not be reached
+      expect(true).toBe(false);
     } catch (error) {
       expect(error.message).toContain("Status must be either");
     }
 
-    // Test invalid price
     try {
       await Book.addBook({
         title: "Test Book",
@@ -244,15 +235,14 @@ describe("Book Model Tests", () => {
         cover_type: "paperback",
         condition: 8,
         status: "forRent",
-        price: -100, // Negative price
+        price: -100,
         uploaded_by: uploaderId,
       });
-      expect(true).toBe(false); // This should not be reached
+      expect(true).toBe(false);
     } catch (error) {
       expect(error.message).toContain("Price must be a positive number");
     }
 
-    // Test missing uploaded_by
     try {
       await Book.addBook({
         title: "Test Book",
@@ -262,9 +252,8 @@ describe("Book Model Tests", () => {
         condition: 8,
         status: "forRent",
         price: 5000,
-        // Missing uploaded_by
       });
-      expect(true).toBe(false); // This should not be reached
+      expect(true).toBe(false);
     } catch (error) {
       expect(error.message).toContain("uploaded_by is required");
     }
@@ -274,16 +263,14 @@ describe("Book Model Tests", () => {
     const nonExistentId = new ObjectId().toString();
     try {
       await Book.updateBook(nonExistentId, { title: "This should fail" });
-      // If we reach here, the test should fail
+
       expect(true).toBe(false);
     } catch (error) {
-      // Just check that an error was thrown
       expect(error).toBeDefined();
     }
   });
 
   it("should delete a book", async () => {
-    // Create a book to delete
     const bookData = {
       title: "Book to Delete",
       author: "Delete Author",
@@ -298,15 +285,12 @@ describe("Book Model Tests", () => {
     const book = await Book.addBook(bookData);
     const bookIdToDelete = book._id.toString();
 
-    // Delete the book
     await Book.deleteBook(bookIdToDelete);
 
-    // Try to find the deleted book
     try {
       const deletedBook = await Book.findBookById(bookIdToDelete);
       expect(deletedBook).toBeNull();
     } catch (error) {
-      // If findBookById throws an error for a non-existent book, that's also acceptable
       expect(error).toBeDefined();
     }
   });
@@ -315,10 +299,9 @@ describe("Book Model Tests", () => {
     const nonExistentId = new ObjectId().toString();
     try {
       await Book.deleteBook(nonExistentId);
-      // If we reach here, the test should fail
+
       expect(true).toBe(false);
     } catch (error) {
-      // Just check that an error was thrown
       expect(error).toBeDefined();
     }
   });

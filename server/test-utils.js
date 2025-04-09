@@ -1,13 +1,13 @@
-import { createApolloServer } from "./index.js"
-import { MongoClient } from "mongodb"
-import dotenv from "dotenv"
+import { createApolloServer } from "./index.js";
+import { MongoClient } from "mongodb";
+import dotenv from "dotenv";
 
-dotenv.config()
+dotenv.config();
 
 // Global variables to store server and database connections
-let mongoClient = null
-let testServer = null
-let testUrl = null
+let mongoClient = null;
+let testServer = null;
+let testUrl = null;
 
 /**
  * Initialize and start the test server
@@ -15,11 +15,11 @@ let testUrl = null
  */
 export async function startTestServer() {
   if (!testServer) {
-    const { server, httpServer, url } = await createApolloServer({ port: 0 })
-    testServer = { server, httpServer }
-    testUrl = url
+    const { server, httpServer, url } = await createApolloServer({ port: 0 });
+    testServer = { server, httpServer };
+    testUrl = url;
   }
-  return { server: testServer, url: testUrl }
+  return { server: testServer, url: testUrl };
 }
 
 /**
@@ -28,10 +28,10 @@ export async function startTestServer() {
  */
 export async function stopTestServer() {
   if (testServer) {
-    await testServer.server.stop()
-    await new Promise((resolve) => testServer.httpServer.close(resolve))
-    testServer = null
-    testUrl = null
+    await testServer.server.stop();
+    await new Promise((resolve) => testServer.httpServer.close(resolve));
+    testServer = null;
+    testUrl = null;
   }
 }
 
@@ -41,15 +41,15 @@ export async function stopTestServer() {
  */
 export async function connectToTestDatabase() {
   if (!mongoClient) {
-    const uri = process.env.MONGODB_URI
-    mongoClient = new MongoClient(uri)
-    await mongoClient.connect()
+    const uri = process.env.MONGODB_URI;
+    mongoClient = new MongoClient(uri);
+    await mongoClient.connect();
   }
 
-  const testDbName = `${process.env.MONGODB_DATABASE}_test`
-  const db = mongoClient.db(testDbName)
+  const testDbName = `${process.env.MONGODB_DATABASE}_test`;
+  const db = mongoClient.db(testDbName);
 
-  return { client: mongoClient, db }
+  return { client: mongoClient, db };
 }
 
 /**
@@ -58,8 +58,8 @@ export async function connectToTestDatabase() {
  */
 export async function disconnectFromTestDatabase() {
   if (mongoClient) {
-    await mongoClient.close()
-    mongoClient = null
+    await mongoClient.close();
+    mongoClient = null;
   }
 }
 
@@ -69,11 +69,10 @@ export async function disconnectFromTestDatabase() {
  * @returns {Promise<void>}
  */
 export async function clearDatabase(db) {
-  if (!db) return
+  if (!db) return;
 
-  const collections = await db.listCollections().toArray()
+  const collections = await db.listCollections().toArray();
   for (const collection of collections) {
-    await db.collection(collection.name).deleteMany({})
+    await db.collection(collection.name).deleteMany({});
   }
 }
-
